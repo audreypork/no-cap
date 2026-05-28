@@ -98,7 +98,6 @@ function createWindow() {
     movable: false,
     minimizable: false,
     maximizable: false,
-    closable: false,
     backgroundColor: '#00000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -278,7 +277,7 @@ function registerIpc() {
   });
 
   ipcMain.handle('quit-app', () => {
-    app.quit();
+    app.exit(0);
   });
 }
 
