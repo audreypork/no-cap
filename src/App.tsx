@@ -521,7 +521,35 @@ function TaskRow({
   );
 }
 
+function nowHHMM(d: Date = new Date()): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 function StartTimePicker({ startTime }: { startTime: string }) {
+  const [draft, setDraft] = useState(startTime);
+  const [minTime, setMinTime] = useState(() => nowHHMM());
+  const [flash, setFlash] = useState(false);
+
+  useEffect(() => setDraft(startTime), [startTime]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setMinTime(nowHHMM()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const commit = async () => {
+    const current = nowHHMM();
+    if (draft < current) {
+      setDraft(startTime);
+      setFlash(true);
+      window.setTimeout(() => setFlash(false), 1200);
+      return;
+    }
+    if (draft !== startTime) {
+      await window.capy.setStartTime(draft);
+    }
+  };
+
   return (
     <div
       style={{
@@ -536,21 +564,30 @@ function StartTimePicker({ startTime }: { startTime: string }) {
       <span>Check in at</span>
       <input
         type="time"
-        value={startTime}
-        onChange={async (e) => {
-          await window.capy.setStartTime(e.target.value);
+        value={draft}
+        min={minTime}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
         }}
         style={{
-          background: 'rgba(255,255,255,0.06)',
-          border: `1px solid ${COLORS.border}`,
+          background: flash ? 'rgba(220,80,80,0.18)' : 'rgba(255,255,255,0.06)',
+          border: `1px solid ${flash ? 'rgba(220,80,80,0.45)' : COLORS.border}`,
           color: COLORS.text,
           fontSize: 12,
           padding: '4px 8px',
           borderRadius: 6,
           fontFamily: 'inherit',
           colorScheme: 'dark',
+          transition: 'background 200ms, border-color 200ms',
         }}
       />
+      {flash ? (
+        <span style={{ fontSize: 11, color: 'rgba(220,80,80,0.85)' }}>
+          must be in the future
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -722,7 +759,7 @@ function FollowingCapy({
     }, 1500);
   };
 
-  const text = `you haven't done your ${count} task${count === 1 ? '' : 's'} yet!!`;
+  const text = `lazy ass bitch you haven't done your ${count} task${count === 1 ? '' : 's'} yet`;
 
   return (
     <div
