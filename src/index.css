@@ -1,0 +1,72 @@
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #FBFAF6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+input, button {
+  font-family: inherit;
+  outline: none;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes flyAcross {
+  0%   { transform: translateX(-160px) translateY(0px); }
+  10%  { transform: translateX(10vw)   translateY(-8px); }
+  25%  { transform: translateX(25vw)   translateY(6px); }
+  50%  { transform: translateX(50vw)   translateY(-10px); }
+  75%  { transform: translateX(75vw)   translateY(8px); }
+  90%  { transform: translateX(90vw)   translateY(-4px); }
+  100% { transform: translateX(calc(100vw + 160px)) translateY(0px); }
+}
+
+@keyframes nod {
+  0%, 100% { transform: rotate(0deg); }
+  40%      { transform: rotate(8deg); }
+  70%      { transform: rotate(-4deg); }
+}
+
+@keyframes driftOffRight {
+  0%   { transform: translateX(0) translateY(0); opacity: 1; }
+  100% { transform: translateX(60vw) translateY(20px); opacity: 0; }
+}
+
+@keyframes happyBounce {
+  0%   { transform: translate(0, 0) scale(1); }
+  20%  { transform: translate(0, -30px) scale(1.05); }
+  40%  { transform: translate(0, 0) scale(1); }
+  55%  { transform: translate(0, -16px) scale(1.03); }
+  70%  { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes sparklePop {
+  0%   { transform: scale(0); opacity: 0; }
+  30%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.4); opacity: 0; }
+}
+
+@keyframes driftToCorner {
+  0%   { transform: translate(0, 0); }
+  100% { transform: translate(var(--dx, 0), var(--dy, 0)); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
