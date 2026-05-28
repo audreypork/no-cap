@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Capybara } from './Capybara';
 import type { CapyState, DayRecord } from './types';
-import { addDaysKey, formatHeaderDate, localDateKey } from './dateUtils';
+import {
+  addDaysKey,
+  formatHeaderDate,
+  isAfterStartTimeToday,
+  localDateKey,
+} from './dateUtils';
 
 const CORNER_W = 130;
 const CORNER_H = (CORNER_W * 55) / 115;
@@ -48,9 +53,10 @@ export function App() {
   const [state, setState] = useState<CapyState | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [viewDateKey, setViewDateKey] = useState<string>(localDateKey());
-  const [flyby, setFlyby] = useState<{ count: number } | null>(null);
-  const [paused, setPaused] = useState(false);
+  const [followActive, setFollowActive] = useState(false);
+  const [followDeparting, setFollowDeparting] = useState(false);
   const [happy, setHappy] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const prevAllDoneRef = useRef(false);
 
   useEffect(() => {
@@ -62,13 +68,8 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const off = window.capy.onFlybyStart(({ count }) => {
-      setFlyby({ count });
-      setPaused(false);
-    });
-    return () => {
-      off();
-    };
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
   }, []);
 
   const today = state?.today ?? localDateKey();
@@ -97,6 +98,28 @@ export function App() {
     }
   }, [allDone, state]);
 
+  const shouldFollow = useMemo(() => {
+    if (!state) return false;
+    if (happy) return false;
+    if (undoneCount === 0) return false;
+    const pause = state.store.pause;
+    if (pause && pause.until > now) return false;
+    return isAfterStartTimeToday(todayRecord.startTime, new Date(now));
+  }, [state, happy, undoneCount, todayRecord.startTime, now]);
+
+  useEffect(() => {
+    if (shouldFollow) {
+      if (!followActive) {
+        setFollowActive(true);
+        setFollowDeparting(false);
+      } else if (followDeparting) {
+        setFollowDeparting(false);
+      }
+    } else if (followActive && !followDeparting) {
+      setFollowDeparting(true);
+    }
+  }, [shouldFollow, followActive, followDeparting]);
+
   const isViewingToday = viewDateKey === today;
   const isViewingPast = viewDateKey < today;
 
@@ -117,54 +140,50 @@ export function App() {
         pointerEvents: 'none',
       }}
     >
-      {flyby ? (
+      {followActive ? (
         <FollowingCapy
-          count={flyby.count}
-          paused={paused}
-          onPauseClick={() => setPaused(true)}
-          onPickPause={async (mins) => {
-            await window.capy.setPause(mins);
-            setFlyby(null);
-            setPaused(false);
-            window.capy.flybyFinished();
+          count={undoneCount}
+          popoverOpen={popoverOpen}
+          shouldDepart={followDeparting}
+          onClick={() => {
+            setViewDateKey(today);
+            setPopoverOpen((o) => !o);
           }}
           onComplete={() => {
-            setFlyby(null);
-            window.capy.flybyFinished();
+            setFollowActive(false);
+            setFollowDeparting(false);
           }}
         />
       ) : null}
 
-      {happy && !flyby ? <HappyCapy /> : null}
+      {happy && !followActive ? <HappyCapy /> : null}
 
-      {!flyby && !happy ? (
-        <>
-          {popoverOpen ? (
-            <Popover
-              state={state}
-              viewDateKey={viewDateKey}
-              viewRecord={viewRecord}
-              todayKey={today}
-              isViewingToday={isViewingToday}
-              isViewingPast={isViewingPast}
-              onPrev={() => setViewDateKey(addDaysKey(viewDateKey, -1))}
-              onNext={() => {
-                if (!isViewingToday) setViewDateKey(addDaysKey(viewDateKey, 1));
-              }}
-              onClose={() => setPopoverOpen(false)}
-            />
-          ) : null}
+      {!followActive && !happy ? (
+        <CornerCapy
+          undoneCount={undoneCount}
+          tasksCount={todayRecord.tasks.length}
+          allDone={allDone}
+          onClick={() => {
+            setViewDateKey(today);
+            setPopoverOpen((o) => !o);
+          }}
+        />
+      ) : null}
 
-          <CornerCapy
-            undoneCount={undoneCount}
-            tasksCount={todayRecord.tasks.length}
-            allDone={allDone}
-            onClick={() => {
-              setViewDateKey(today);
-              setPopoverOpen((o) => !o);
-            }}
-          />
-        </>
+      {popoverOpen ? (
+        <Popover
+          state={state}
+          viewDateKey={viewDateKey}
+          viewRecord={viewRecord}
+          todayKey={today}
+          isViewingToday={isViewingToday}
+          isViewingPast={isViewingPast}
+          onPrev={() => setViewDateKey(addDaysKey(viewDateKey, -1))}
+          onNext={() => {
+            if (!isViewingToday) setViewDateKey(addDaysKey(viewDateKey, 1));
+          }}
+          onClose={() => setPopoverOpen(false)}
+        />
       ) : null}
     </div>
   );
@@ -652,25 +671,25 @@ function Footer({
   );
 }
 
-const FOLLOW_DURATION_MS = 12000;
 const FOLLOW_LERP = 0.08;
 const CURSOR_OFFSET_X = -FLY_W - 24;
 const CURSOR_OFFSET_Y = -FLY_H - 20;
+const DEPART_MS = 1800;
 
 function FollowingCapy({
   count,
-  paused,
-  onPauseClick,
-  onPickPause,
+  popoverOpen,
+  shouldDepart,
+  onClick,
   onComplete,
 }: {
   count: number;
-  paused: boolean;
-  onPauseClick: () => void;
-  onPickPause: (minutes: number) => void;
+  popoverOpen: boolean;
+  shouldDepart: boolean;
+  onClick: () => void;
   onComplete: () => void;
 }) {
-  const [stage, setStage] = useState<'following' | 'paused' | 'departing'>(
+  const [stage, setStage] = useState<'following' | 'frozen' | 'departing'>(
     'following',
   );
   const [pos, setPos] = useState<{ x: number; y: number }>(() => ({
@@ -702,16 +721,28 @@ function FollowingCapy({
     return () => document.removeEventListener('mousemove', onMove);
   }, []);
 
+  // Drive stage transitions from props
   useEffect(() => {
-    if (paused && stage === 'following') setStage('paused');
-  }, [paused, stage]);
+    if (shouldDepart && stage !== 'departing') {
+      setStage('departing');
+      return;
+    }
+    if (!shouldDepart && stage === 'departing') {
+      // shouldn't normally happen, but recover if user un-departs mid-flight
+      setStage(popoverOpen ? 'frozen' : 'following');
+      return;
+    }
+    if (stage === 'departing') return;
+    if (popoverOpen && stage !== 'frozen') setStage('frozen');
+    if (!popoverOpen && stage === 'frozen') setStage('following');
+  }, [popoverOpen, shouldDepart, stage]);
 
   useEffect(() => {
     let stopped = false;
     const tick = () => {
       if (stopped) return;
       const s = stageRef.current;
-      if (s !== 'paused') {
+      if (s !== 'frozen') {
         const p = posRef.current;
         let targetX: number;
         let targetY: number;
@@ -741,23 +772,10 @@ function FollowingCapy({
   }, []);
 
   useEffect(() => {
-    if (stage !== 'following') return;
-    const t = window.setTimeout(() => setStage('departing'), FOLLOW_DURATION_MS);
-    return () => window.clearTimeout(t);
-  }, [stage]);
-
-  useEffect(() => {
     if (stage !== 'departing') return;
-    const t = window.setTimeout(onComplete, 2200);
+    const t = window.setTimeout(onComplete, DEPART_MS);
     return () => window.clearTimeout(t);
   }, [stage, onComplete]);
-
-  const handlePauseChoice = (mins: number) => {
-    setStage('departing');
-    window.setTimeout(() => {
-      onPickPause(mins);
-    }, 1500);
-  };
 
   const text = `lazy ass bitch you haven't done your ${count} task${count === 1 ? '' : 's'} yet`;
 
@@ -777,11 +795,11 @@ function FollowingCapy({
           position: 'relative',
           width: FLY_W,
           height: FLY_H,
-          cursor: stage === 'following' ? 'pointer' : 'default',
+          cursor: stage === 'departing' ? 'default' : 'pointer',
           pointerEvents: 'auto',
         }}
         onClick={() => {
-          if (stage === 'following') onPauseClick();
+          if (stage !== 'departing') onClick();
         }}
       >
         <div
@@ -792,8 +810,7 @@ function FollowingCapy({
         >
           <Capybara width={FLY_W} variant="awake" flipX={flipped} />
         </div>
-        <SpeechBubble text={text} />
-        {stage === 'paused' ? <PausePills onPick={handlePauseChoice} /> : null}
+        {stage !== 'departing' ? <SpeechBubble text={text} /> : null}
       </ClickableRegion>
     </div>
   );
@@ -837,47 +854,6 @@ function SpeechBubble({ text }: { text: string }) {
           borderTop: `8px solid ${COLORS.bg}`,
         }}
       />
-    </div>
-  );
-}
-
-function PausePills({ onPick }: { onPick: (mins: number) => void }) {
-  const [hover, setHover] = useState<number | null>(null);
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: FLY_W + 12,
-        top: '50%',
-        transform: 'translateY(-50%)',
-        display: 'flex',
-        gap: 6,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {[15, 30, 45, 60].map((m) => (
-        <button
-          key={m}
-          onMouseEnter={() => setHover(m)}
-          onMouseLeave={() => setHover(null)}
-          onClick={() => onPick(m)}
-          style={{
-            width: 76,
-            height: 38,
-            borderRadius: 19,
-            border: 'none',
-            background: hover === m ? COLORS.hover : COLORS.bg,
-            color: COLORS.text,
-            fontSize: 14,
-            fontWeight: 500,
-            cursor: 'pointer',
-            transition: 'background 120ms',
-            boxShadow: '0 3px 10px rgba(0,0,0,0.25)',
-          }}
-        >
-          {m} min
-        </button>
-      ))}
     </div>
   );
 }
