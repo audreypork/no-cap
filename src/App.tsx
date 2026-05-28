@@ -3,11 +3,11 @@ import { Capybara } from './Capybara';
 import type { CapyState, DayRecord } from './types';
 import { addDaysKey, formatHeaderDate, localDateKey } from './dateUtils';
 
-const CORNER_W = 72;
+const CORNER_W = 130;
 const CORNER_H = (CORNER_W * 55) / 115;
-const FLY_W = 120;
+const FLY_W = 230;
 const FLY_H = (FLY_W * 55) / 115;
-const CORNER_MARGIN = 16;
+const CORNER_MARGIN = 20;
 const POPOVER_W = 320;
 const HAPPY_DURATION_MS = 4500;
 
@@ -205,8 +205,8 @@ function CornerCapy({
         position: 'absolute',
         right: CORNER_MARGIN,
         bottom: CORNER_MARGIN,
-        width: CORNER_W + 14,
-        height: CORNER_H + 14,
+        width: CORNER_W + 18,
+        height: CORNER_H + 18,
         pointerEvents: 'auto',
         cursor: 'pointer',
       }}
@@ -229,17 +229,18 @@ function CornerCapy({
           position: 'absolute',
           top: 0,
           right: 0,
-          width: 22,
-          height: 22,
-          borderRadius: 11,
+          width: 28,
+          height: 28,
+          borderRadius: 14,
           background: COLORS.bg,
           color: COLORS.text,
-          fontSize: 11,
-          fontWeight: 500,
+          fontSize: 13,
+          fontWeight: 600,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           border: `1px solid ${COLORS.border}`,
+          boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
         }}
       >
         {badgeText}
@@ -754,31 +755,31 @@ function SpeechBubble({ text }: { text: string }) {
         position: 'absolute',
         bottom: '100%',
         left: -8,
-        marginBottom: 14,
+        marginBottom: 16,
         background: COLORS.bg,
         color: COLORS.text,
-        fontSize: 13,
+        fontSize: 16,
         fontWeight: 500,
-        padding: '8px 12px',
-        borderRadius: 13,
+        padding: '10px 16px',
+        borderRadius: 16,
         whiteSpace: 'nowrap',
-        maxWidth: 320,
+        maxWidth: 480,
         overflow: 'hidden',
         textOverflow: 'ellipsis',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+        boxShadow: '0 6px 22px rgba(0,0,0,0.35)',
       }}
     >
       {text}
       <div
         style={{
           position: 'absolute',
-          bottom: -5,
-          left: 18,
+          bottom: -7,
+          left: 22,
           width: 0,
           height: 0,
-          borderLeft: '6px solid transparent',
-          borderRight: '6px solid transparent',
-          borderTop: `6px solid ${COLORS.bg}`,
+          borderLeft: '8px solid transparent',
+          borderRight: '8px solid transparent',
+          borderTop: `8px solid ${COLORS.bg}`,
         }}
       />
     </div>
@@ -806,16 +807,17 @@ function PausePills({ onPick }: { onPick: (mins: number) => void }) {
           onMouseLeave={() => setHover(null)}
           onClick={() => onPick(m)}
           style={{
-            width: 64,
-            height: 32,
-            borderRadius: 16,
+            width: 76,
+            height: 38,
+            borderRadius: 19,
             border: 'none',
             background: hover === m ? COLORS.hover : COLORS.bg,
             color: COLORS.text,
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: 500,
             cursor: 'pointer',
             transition: 'background 120ms',
+            boxShadow: '0 3px 10px rgba(0,0,0,0.25)',
           }}
         >
           {m} min
