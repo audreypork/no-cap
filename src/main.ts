@@ -245,6 +245,7 @@ function registerIpc() {
     const today = getTodayRecord();
     today.startTime = `${hh}:${mm}`;
     setTodayRecord(today);
+    store.delete('pause');
     broadcastState();
   });
 
@@ -292,9 +293,17 @@ async function syncAutoLaunch() {
   }
 }
 
+function clearExpiredPause() {
+  const pause = store.get('pause');
+  if (pause && pause.until <= Date.now()) {
+    store.delete('pause');
+  }
+}
+
 app.on('ready', async () => {
   if (app.dock) app.dock.hide();
   ensureTodayRecord();
+  clearExpiredPause();
   registerIpc();
   createWindow();
   scheduleMidnightRollover();
