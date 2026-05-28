@@ -239,6 +239,16 @@ function registerIpc() {
     broadcastState();
   });
 
+  ipcMain.handle('bump-today-checkin-mins', (_e, minutes: number) => {
+    const target = new Date(Date.now() + minutes * 60 * 1000);
+    const hh = String(target.getHours()).padStart(2, '0');
+    const mm = String(target.getMinutes()).padStart(2, '0');
+    const today = getTodayRecord();
+    today.startTime = `${hh}:${mm}`;
+    setTodayRecord(today);
+    broadcastState();
+  });
+
   ipcMain.handle('set-pause', (_e, minutes: number) => {
     const until = Date.now() + minutes * 60 * 1000;
     store.set('pause', { until });

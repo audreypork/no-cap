@@ -26,6 +26,8 @@ contextBridge.exposeInMainWorld('capy', {
   toggleTask: (id: string) => ipcRenderer.invoke('toggle-task', id),
   deleteTask: (id: string) => ipcRenderer.invoke('delete-task', id),
   setStartTime: (time: string) => ipcRenderer.invoke('set-start-time', time),
+  bumpTodayCheckinMins: (minutes: number) =>
+    ipcRenderer.invoke('bump-today-checkin-mins', minutes),
   setPause: (minutes: number) => ipcRenderer.invoke('set-pause', minutes),
   clearPause: () => ipcRenderer.invoke('clear-pause'),
   setLaunchAtLogin: (enabled: boolean) =>

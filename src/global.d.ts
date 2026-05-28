@@ -14,6 +14,7 @@ declare global {
       toggleTask: (id: string) => Promise<void>;
       deleteTask: (id: string) => Promise<void>;
       setStartTime: (time: string) => Promise<void>;
+      bumpTodayCheckinMins: (minutes: number) => Promise<void>;
       setPause: (minutes: number) => Promise<void>;
       clearPause: () => Promise<void>;
       setLaunchAtLogin: (enabled: boolean) => Promise<void>;

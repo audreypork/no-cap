@@ -285,7 +285,7 @@ function Popover({
           <StartTimePicker startTime={state.store.startTime} />
           <RemindMeButton
             onClick={async () => {
-              await window.capy.setPause(30);
+              await window.capy.bumpTodayCheckinMins(30);
               onClose();
             }}
           />
