@@ -122,6 +122,11 @@ function createWindow() {
   mainWindow.webContents.on('did-finish-load', () => {
     broadcastState();
   });
+
+  mainWindow.on('blur', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.webContents.send('window-blurred');
+  });
 }
 
 function scheduleMidnightRollover() {

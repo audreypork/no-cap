@@ -7,6 +7,7 @@ declare global {
       getState: () => Promise<CapyState>;
       onStateChanged: (cb: (state: CapyState) => void) => () => void;
       onFlybyStart: (cb: (payload: { count: number }) => void) => () => void;
+      onWindowBlurred: (cb: () => void) => () => void;
       flybyFinished: () => void;
       addTask: (title: string) => Promise<void>;
       updateTaskTitle: (id: string, title: string) => Promise<void>;

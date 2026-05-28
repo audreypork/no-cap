@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Capybara } from './Capybara';
 import type { CapyState, DayRecord } from './types';
 import { addDaysKey, formatHeaderDate, localDateKey } from './dateUtils';
 
 const CORNER_W = 130;
 const CORNER_H = (CORNER_W * 55) / 115;
-const FLY_W = 230;
+const FLY_W = 160;
 const FLY_H = (FLY_W * 55) / 115;
 const CORNER_MARGIN = 20;
 const POPOVER_W = 320;
@@ -97,20 +97,14 @@ export function App() {
     }
   }, [allDone, state]);
 
-  useEffect(() => {
-    if (popoverOpen) {
-      window.capy.setIgnoreMouse(false);
-      return () => {
-        window.capy.setIgnoreMouse(true);
-      };
-    }
-  }, [popoverOpen]);
-
   const isViewingToday = viewDateKey === today;
   const isViewingPast = viewDateKey < today;
 
-  const handleClickOutside = useCallback(() => {
-    setPopoverOpen(false);
+  useEffect(() => {
+    const off = window.capy.onWindowBlurred(() => {
+      setPopoverOpen(false);
+    });
+    return () => off();
   }, []);
 
   if (!state) return null;
@@ -146,29 +140,19 @@ export function App() {
       {!flyby && !happy ? (
         <>
           {popoverOpen ? (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                pointerEvents: 'auto',
+            <Popover
+              state={state}
+              viewDateKey={viewDateKey}
+              viewRecord={viewRecord}
+              todayKey={today}
+              isViewingToday={isViewingToday}
+              isViewingPast={isViewingPast}
+              onPrev={() => setViewDateKey(addDaysKey(viewDateKey, -1))}
+              onNext={() => {
+                if (!isViewingToday) setViewDateKey(addDaysKey(viewDateKey, 1));
               }}
-              onMouseEnter={() => window.capy.setIgnoreMouse(false)}
-              onClick={handleClickOutside}
-            >
-              <Popover
-                state={state}
-                viewDateKey={viewDateKey}
-                viewRecord={viewRecord}
-                todayKey={today}
-                isViewingToday={isViewingToday}
-                isViewingPast={isViewingPast}
-                onPrev={() => setViewDateKey(addDaysKey(viewDateKey, -1))}
-                onNext={() => {
-                  if (!isViewingToday) setViewDateKey(addDaysKey(viewDateKey, 1));
-                }}
-                onClose={() => setPopoverOpen(false)}
-              />
-            </div>
+              onClose={() => setPopoverOpen(false)}
+            />
           ) : null}
 
           <CornerCapy
@@ -297,13 +281,47 @@ function Popover({
       />
       <TaskList record={viewRecord} readonly={isViewingPast} />
       {!isViewingPast ? (
-        <StartTimePicker startTime={state.store.startTime} />
+        <>
+          <StartTimePicker startTime={state.store.startTime} />
+          <RemindMeButton
+            onClick={async () => {
+              await window.capy.setPause(30);
+              onClose();
+            }}
+          />
+        </>
       ) : null}
       <Footer
         launchAtLogin={state.store.launchAtLogin}
         onQuit={() => window.capy.quitApp()}
       />
     </ClickableRegion>
+  );
+}
+
+function RemindMeButton({ onClick }: { onClick: () => void }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        marginTop: 12,
+        width: '100%',
+        height: 36,
+        borderRadius: 18,
+        border: `1px solid ${COLORS.border}`,
+        background: hover ? COLORS.hover : 'rgba(255,255,255,0.04)',
+        color: COLORS.text,
+        fontSize: 13,
+        fontWeight: 500,
+        cursor: 'pointer',
+        transition: 'background 120ms',
+      }}
+    >
+      Remind me in 30 mins
+    </button>
   );
 }
 
@@ -515,7 +533,7 @@ function StartTimePicker({ startTime }: { startTime: string }) {
         color: COLORS.textMuted,
       }}
     >
-      <span>Start reminding me at</span>
+      <span>Check in at</span>
       <input
         type="time"
         value={startTime}

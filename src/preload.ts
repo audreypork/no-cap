@@ -14,6 +14,11 @@ contextBridge.exposeInMainWorld('capy', {
     ipcRenderer.on('flyby-start', handler);
     return () => ipcRenderer.removeListener('flyby-start', handler);
   },
+  onWindowBlurred: (cb: () => void) => {
+    const handler = () => cb();
+    ipcRenderer.on('window-blurred', handler);
+    return () => ipcRenderer.removeListener('window-blurred', handler);
+  },
   flybyFinished: () => ipcRenderer.send('flyby-finished'),
   addTask: (title: string) => ipcRenderer.invoke('add-task', title),
   updateTaskTitle: (id: string, title: string) =>
