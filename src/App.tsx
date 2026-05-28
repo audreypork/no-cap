@@ -294,11 +294,7 @@ function Popover({
         onPrev={onPrev}
         onNext={onNext}
       />
-      <TaskList
-        record={viewRecord}
-        readonly={isViewingPast}
-        canAdd={!isViewingPast && viewRecord.tasks.length < 3}
-      />
+      <TaskList record={viewRecord} readonly={isViewingPast} />
       {!isViewingPast ? (
         <StartTimePicker startTime={state.store.startTime} />
       ) : null}
@@ -371,60 +367,56 @@ function chevronStyle(active: boolean): React.CSSProperties {
 function TaskList({
   record,
   readonly,
-  canAdd,
 }: {
   record: DayRecord;
   readonly: boolean;
-  canAdd: boolean;
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {record.tasks.map((t) => (
-        <TaskRow key={t.id} task={t} readonly={readonly} />
-      ))}
-      {Array.from({ length: Math.max(0, 3 - record.tasks.length) }).map((_, i) => (
-        <EmptyTaskRow key={`empty-${i}`} disabled={readonly || record.tasks.length + i >= 3} />
-      ))}
-      {!readonly ? (
-        <button
-          disabled={!canAdd}
-          onClick={async () => {
-            if (canAdd) await window.capy.addTask('');
-          }}
-          style={{
-            marginTop: 4,
-            background: 'transparent',
-            border: 'none',
-            color: COLORS.text,
-            fontSize: 12,
-            fontWeight: 500,
-            alignSelf: 'flex-start',
-            padding: '6px 0',
-            opacity: canAdd ? 1 : 0.5,
-            cursor: canAdd ? 'pointer' : 'default',
-          }}
-        >
-          + Add
-        </button>
-      ) : null}
+      {[0, 1, 2].map((i) => {
+        const task = record.tasks[i];
+        return (
+          <TaskRow
+            key={task ? task.id : `slot-${i}`}
+            task={task}
+            readonly={readonly}
+          />
+        );
+      })}
     </div>
   );
 }
 
-function TaskRow({ task, readonly }: { task: { id: string; title: string; done: boolean }; readonly: boolean }) {
+function TaskRow({
+  task,
+  readonly,
+}: {
+  task: { id: string; title: string; done: boolean } | undefined;
+  readonly: boolean;
+}) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(task.title);
+  const [draft, setDraft] = useState(task?.title ?? '');
 
   useEffect(() => {
-    if (!editing) setDraft(task.title);
-  }, [task.title, editing]);
+    if (!editing) setDraft(task?.title ?? '');
+  }, [task?.title, editing]);
 
   const commit = async () => {
     setEditing(false);
-    if (draft !== task.title) {
-      await window.capy.updateTaskTitle(task.id, draft);
+    const trimmed = draft.trim();
+    if (task) {
+      if (trimmed === '') {
+        await window.capy.deleteTask(task.id);
+      } else if (trimmed !== task.title) {
+        await window.capy.updateTaskTitle(task.id, trimmed);
+      }
+    } else if (trimmed !== '') {
+      await window.capy.addTask(trimmed);
     }
   };
+
+  const isEmpty = !task;
+  const done = task?.done ?? false;
 
   return (
     <div
@@ -437,27 +429,29 @@ function TaskRow({ task, readonly }: { task: { id: string; title: string; done: 
     >
       <button
         onClick={async () => {
-          if (!readonly) await window.capy.toggleTask(task.id);
+          if (!readonly && task) await window.capy.toggleTask(task.id);
         }}
-        disabled={readonly}
-        aria-label={task.done ? 'Mark undone' : 'Mark done'}
+        disabled={readonly || isEmpty}
+        aria-label={done ? 'Mark undone' : 'Mark done'}
         style={{
           width: 18,
           height: 18,
           borderRadius: 9,
-          border: `1.5px solid ${task.done ? COLORS.text : 'rgba(255,255,255,0.4)'}`,
-          background: task.done ? COLORS.text : 'transparent',
+          border: `1.5px ${isEmpty ? 'dashed' : 'solid'} ${
+            done ? COLORS.text : isEmpty ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.4)'
+          }`,
+          background: done ? COLORS.text : 'transparent',
           color: COLORS.bg,
           fontSize: 11,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           padding: 0,
-          cursor: readonly ? 'default' : 'pointer',
+          cursor: readonly || isEmpty ? 'default' : 'pointer',
           flexShrink: 0,
         }}
       >
-        {task.done ? '✓' : ''}
+        {done ? '✓' : ''}
       </button>
       {editing && !readonly ? (
         <input
@@ -468,10 +462,11 @@ function TaskRow({ task, readonly }: { task: { id: string; title: string; done: 
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
             if (e.key === 'Escape') {
-              setDraft(task.title);
+              setDraft(task?.title ?? '');
               setEditing(false);
             }
           }}
+          placeholder="Add a priority…"
           style={{
             flex: 1,
             background: 'transparent',
@@ -479,7 +474,7 @@ function TaskRow({ task, readonly }: { task: { id: string; title: string; done: 
             color: COLORS.text,
             fontSize: 13,
             padding: 0,
-            textDecoration: task.done ? 'line-through' : 'none',
+            textDecoration: done ? 'line-through' : 'none',
           }}
         />
       ) : (
@@ -490,9 +485,9 @@ function TaskRow({ task, readonly }: { task: { id: string; title: string; done: 
           style={{
             flex: 1,
             fontSize: 13,
-            color: task.title ? COLORS.text : COLORS.textMuted,
-            textDecoration: task.done ? 'line-through' : 'none',
-            opacity: task.done ? 0.55 : 1,
+            color: task?.title ? COLORS.text : COLORS.textMuted,
+            textDecoration: done ? 'line-through' : 'none',
+            opacity: done ? 0.55 : 1,
             cursor: readonly ? 'default' : 'text',
             minHeight: 18,
             overflow: 'hidden',
@@ -500,55 +495,9 @@ function TaskRow({ task, readonly }: { task: { id: string; title: string; done: 
             whiteSpace: 'nowrap',
           }}
         >
-          {task.title || (readonly ? '—' : 'Add a priority…')}
+          {task?.title || (readonly ? '—' : 'Add a priority…')}
         </div>
       )}
-      {!readonly ? (
-        <button
-          onClick={async () => {
-            await window.capy.deleteTask(task.id);
-          }}
-          aria-label="Delete"
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: COLORS.textMuted,
-            fontSize: 12,
-            cursor: 'pointer',
-            padding: 4,
-            opacity: 0.5,
-          }}
-        >
-          ×
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function EmptyTaskRow({ disabled }: { disabled: boolean }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '4px 0',
-        opacity: 0.6,
-      }}
-    >
-      <div
-        style={{
-          width: 18,
-          height: 18,
-          borderRadius: 9,
-          border: `1.5px dashed rgba(255,255,255,0.2)`,
-          flexShrink: 0,
-        }}
-      />
-      <div style={{ flex: 1, fontSize: 13, color: COLORS.textMuted }}>
-        {disabled ? '—' : 'Add a priority…'}
-      </div>
     </div>
   );
 }
