@@ -159,14 +159,9 @@ function fireFlyby() {
   const undone = today.tasks.filter((t) => !t.done);
   if (undone.length === 0) return;
 
-  const idx = today.currentTaskIndex % undone.length;
-  const task = undone[idx];
-  today.currentTaskIndex = (today.currentTaskIndex + 1) % undone.length;
-  setTodayRecord(today);
-
   flybyInProgress = true;
   lastFlybyAt = Date.now();
-  mainWindow.webContents.send('flyby-start', { title: task.title });
+  mainWindow.webContents.send('flyby-start', { count: undone.length });
 }
 
 function startFlybyScheduler() {

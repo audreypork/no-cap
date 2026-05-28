@@ -9,8 +9,8 @@ contextBridge.exposeInMainWorld('capy', {
     ipcRenderer.on('state-changed', handler);
     return () => ipcRenderer.removeListener('state-changed', handler);
   },
-  onFlybyStart: (cb: (payload: { title: string }) => void) => {
-    const handler = (_e: unknown, payload: { title: string }) => cb(payload);
+  onFlybyStart: (cb: (payload: { count: number }) => void) => {
+    const handler = (_e: unknown, payload: { count: number }) => cb(payload);
     ipcRenderer.on('flyby-start', handler);
     return () => ipcRenderer.removeListener('flyby-start', handler);
   },

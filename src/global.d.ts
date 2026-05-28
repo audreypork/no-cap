@@ -6,7 +6,7 @@ declare global {
       setIgnoreMouse: (ignore: boolean) => void;
       getState: () => Promise<CapyState>;
       onStateChanged: (cb: (state: CapyState) => void) => () => void;
-      onFlybyStart: (cb: (payload: { title: string }) => void) => () => void;
+      onFlybyStart: (cb: (payload: { count: number }) => void) => () => void;
       flybyFinished: () => void;
       addTask: (title: string) => Promise<void>;
       updateTaskTitle: (id: string, title: string) => Promise<void>;

@@ -48,7 +48,7 @@ export function App() {
   const [state, setState] = useState<CapyState | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [viewDateKey, setViewDateKey] = useState<string>(localDateKey());
-  const [flyby, setFlyby] = useState<{ title: string } | null>(null);
+  const [flyby, setFlyby] = useState<{ count: number } | null>(null);
   const [paused, setPaused] = useState(false);
   const [happy, setHappy] = useState(false);
   const prevAllDoneRef = useRef(false);
@@ -62,8 +62,8 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const off = window.capy.onFlybyStart(({ title }) => {
-      setFlyby({ title });
+    const off = window.capy.onFlybyStart(({ count }) => {
+      setFlyby({ count });
       setPaused(false);
     });
     return () => {
@@ -124,8 +124,8 @@ export function App() {
       }}
     >
       {flyby ? (
-        <FlyingCapy
-          title={flyby.title}
+        <FollowingCapy
+          count={flyby.count}
           paused={paused}
           onPauseClick={() => setPaused(true)}
           onPickPause={async (mins) => {
@@ -596,37 +596,103 @@ function Footer({
   );
 }
 
-function FlyingCapy({
-  title,
+const FOLLOW_DURATION_MS = 12000;
+const FOLLOW_LERP = 0.08;
+const CURSOR_OFFSET_X = -FLY_W - 24;
+const CURSOR_OFFSET_Y = -FLY_H - 20;
+
+function FollowingCapy({
+  count,
   paused,
   onPauseClick,
   onPickPause,
   onComplete,
 }: {
-  title: string;
+  count: number;
   paused: boolean;
   onPauseClick: () => void;
   onPickPause: (minutes: number) => void;
   onComplete: () => void;
 }) {
-  const yOffset = useMemo(() => Math.round((Math.random() - 0.5) * 120), []);
-  const [stage, setStage] = useState<'flying' | 'paused' | 'departing'>('flying');
-  const [frozenX, setFrozenX] = useState<number | null>(null);
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [stage, setStage] = useState<'following' | 'paused' | 'departing'>(
+    'following',
+  );
+  const [pos, setPos] = useState<{ x: number; y: number }>(() => ({
+    x: -FLY_W - 40,
+    y: window.innerHeight / 2 - FLY_H / 2,
+  }));
+  const [flipped, setFlipped] = useState(false);
+  const cursorRef = useRef<{ x: number; y: number }>({
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
+  });
+  const posRef = useRef(pos);
+  const rafRef = useRef<number | null>(null);
+  const stageRef = useRef(stage);
 
   useEffect(() => {
-    if (paused && stage === 'flying') {
-      const rect = wrapperRef.current?.getBoundingClientRect();
-      if (rect) setFrozenX(rect.left);
-      setStage('paused');
-    }
+    posRef.current = pos;
+  }, [pos]);
+
+  useEffect(() => {
+    stageRef.current = stage;
+  }, [stage]);
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      cursorRef.current = { x: e.clientX, y: e.clientY };
+    };
+    document.addEventListener('mousemove', onMove);
+    return () => document.removeEventListener('mousemove', onMove);
+  }, []);
+
+  useEffect(() => {
+    if (paused && stage === 'following') setStage('paused');
   }, [paused, stage]);
 
   useEffect(() => {
-    if (stage !== 'flying') return;
-    const t = window.setTimeout(() => {
-      onComplete();
-    }, 8000);
+    let stopped = false;
+    const tick = () => {
+      if (stopped) return;
+      const s = stageRef.current;
+      if (s !== 'paused') {
+        const p = posRef.current;
+        let targetX: number;
+        let targetY: number;
+        if (s === 'departing') {
+          targetX = window.innerWidth + 200;
+          targetY = p.y + 30;
+        } else {
+          const c = cursorRef.current;
+          targetX = clamp(c.x + CURSOR_OFFSET_X, 8, window.innerWidth - FLY_W - 8);
+          targetY = clamp(c.y + CURSOR_OFFSET_Y, 80, window.innerHeight - FLY_H - 16);
+        }
+        const dx = targetX - p.x;
+        const dy = targetY - p.y;
+        const next = { x: p.x + dx * FOLLOW_LERP, y: p.y + dy * FOLLOW_LERP };
+        const cursorIsLeft = cursorRef.current.x < next.x + FLY_W / 2;
+        setFlipped(cursorIsLeft && s !== 'departing');
+        posRef.current = next;
+        setPos(next);
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      stopped = true;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (stage !== 'following') return;
+    const t = window.setTimeout(() => setStage('departing'), FOLLOW_DURATION_MS);
+    return () => window.clearTimeout(t);
+  }, [stage]);
+
+  useEffect(() => {
+    if (stage !== 'departing') return;
+    const t = window.setTimeout(onComplete, 2200);
     return () => window.clearTimeout(t);
   }, [stage, onComplete]);
 
@@ -634,65 +700,51 @@ function FlyingCapy({
     setStage('departing');
     window.setTimeout(() => {
       onPickPause(mins);
-    }, 1100);
+    }, 1500);
   };
+
+  const text = `you haven't done your ${count} task${count === 1 ? '' : 's'} yet!!`;
 
   return (
     <div
       style={{
         position: 'absolute',
-        top: `calc(50vh + ${yOffset}px - ${FLY_H / 2}px)`,
-        left: 0,
-        width: '100vw',
-        height: FLY_H + 80,
+        left: pos.x,
+        top: pos.y,
+        width: FLY_W,
+        height: FLY_H,
         pointerEvents: 'none',
       }}
     >
-      <div
-        ref={wrapperRef}
-        style={
-          stage === 'flying'
-            ? {
-                position: 'absolute',
-                top: 40,
-                left: 0,
-                animation: 'flyAcross 8s linear forwards',
-                pointerEvents: 'auto',
-              }
-            : {
-                position: 'absolute',
-                top: 40,
-                left: frozenX ?? 0,
-                pointerEvents: 'auto',
-              }
-        }
+      <ClickableRegion
+        style={{
+          position: 'relative',
+          width: FLY_W,
+          height: FLY_H,
+          cursor: stage === 'following' ? 'pointer' : 'default',
+          pointerEvents: 'auto',
+        }}
+        onClick={() => {
+          if (stage === 'following') onPauseClick();
+        }}
       >
-        <ClickableRegion
+        <div
           style={{
-            position: 'relative',
-            width: FLY_W,
-            height: FLY_H,
-            cursor: stage === 'flying' ? 'pointer' : 'default',
-          }}
-          onClick={() => {
-            if (stage === 'flying') onPauseClick();
+            animation: stage === 'departing' ? 'nod 600ms ease-in-out' : undefined,
+            transformOrigin: 'center bottom',
           }}
         >
-          <div
-            style={
-              stage === 'departing'
-                ? { animation: 'nod 500ms ease-in-out, driftOffRight 600ms ease-in 500ms forwards' }
-                : undefined
-            }
-          >
-            <Capybara width={FLY_W} variant="awake" />
-          </div>
-          <SpeechBubble text={title} />
-          {stage === 'paused' ? <PausePills onPick={handlePauseChoice} /> : null}
-        </ClickableRegion>
-      </div>
+          <Capybara width={FLY_W} variant="awake" flipX={flipped} />
+        </div>
+        <SpeechBubble text={text} />
+        {stage === 'paused' ? <PausePills onPick={handlePauseChoice} /> : null}
+      </ClickableRegion>
     </div>
   );
+}
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
 }
 
 function SpeechBubble({ text }: { text: string }) {
