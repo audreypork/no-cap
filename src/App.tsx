@@ -225,7 +225,9 @@ function CornerCapy({
           bottom: 0,
           width: CORNER_W,
           height: CORNER_H,
-          animation: hovered ? 'breathe 2.4s ease-in-out infinite' : undefined,
+          transformOrigin: 'bottom right',
+          transition: 'transform 140ms ease-out',
+          transform: hovered ? 'scale(1.1)' : 'scale(1)',
         }}
       >
         <Capybara width={CORNER_W} variant="sleeping" />
