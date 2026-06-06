@@ -1,5 +1,5 @@
 import React from 'react';
-import sleepyImg from './assets/capybara-sleepy-cropped.png';
+import capyImg from './assets/capy.png';
 
 type Variant = 'sleeping' | 'awake' | 'happy';
 
@@ -10,15 +10,15 @@ type Props = {
 };
 
 // Intrinsic dimensions of the source PNG, used to maintain aspect ratio.
-export const CAPY_SRC_W = 640;
-export const CAPY_SRC_H = 390;
+export const CAPY_SRC_W = 592;
+export const CAPY_SRC_H = 316;
 export const CAPY_ASPECT = CAPY_SRC_W / CAPY_SRC_H;
 
 export function Capybara({ width, variant = 'awake', flipX = false }: Props) {
   const height = width / CAPY_ASPECT;
   return (
     <img
-      src={sleepyImg}
+      src={capyImg}
       width={width}
       height={height}
       alt="capybara"
