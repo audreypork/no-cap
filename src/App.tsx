@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Capybara } from './Capybara';
+import { Capybara, CAPY_ASPECT } from './Capybara';
 import type { CapyState, DayRecord } from './types';
 import {
   addDaysKey,
@@ -9,9 +9,9 @@ import {
 } from './dateUtils';
 
 const CORNER_W = 130;
-const CORNER_H = (CORNER_W * 55) / 115;
+const CORNER_H = CORNER_W / CAPY_ASPECT;
 const FLY_W = 160;
-const FLY_H = (FLY_W * 55) / 115;
+const FLY_H = FLY_W / CAPY_ASPECT;
 const CORNER_MARGIN = 20;
 const POPOVER_W = 320;
 const HAPPY_DURATION_MS = 4500;
