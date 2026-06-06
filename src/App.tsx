@@ -202,6 +202,7 @@ function CornerCapy({
 }) {
   const showBadge = tasksCount > 0;
   const badgeText = allDone ? '✓' : String(undoneCount);
+  const [hovered, setHovered] = useState(false);
   return (
     <ClickableRegion
       style={{
@@ -216,13 +217,15 @@ function CornerCapy({
       onClick={onClick}
     >
       <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         style={{
           position: 'absolute',
           right: 0,
           bottom: 0,
           width: CORNER_W,
           height: CORNER_H,
-          animation: 'breathe 4s ease-in-out infinite',
+          animation: hovered ? 'breathe 2.4s ease-in-out infinite' : undefined,
         }}
       >
         <Capybara width={CORNER_W} variant="sleeping" />
