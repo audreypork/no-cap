@@ -678,8 +678,8 @@ function Footer({
   );
 }
 
-const FOLLOW_LERP = 0.08;
-const CURSOR_OFFSET_X = -FLY_W - 24;
+const FOLLOW_LERP = 0.04;
+const CURSOR_OFFSET_X = -FLY_W / 2;
 const CURSOR_OFFSET_Y = -FLY_H - 20;
 const DEPART_MS = 1800;
 
@@ -833,7 +833,8 @@ function SpeechBubble({ text }: { text: string }) {
       style={{
         position: 'absolute',
         bottom: '100%',
-        left: -8,
+        left: '50%',
+        transform: 'translateX(-50%)',
         marginBottom: 16,
         background: COLORS.bg,
         color: COLORS.text,
@@ -846,6 +847,7 @@ function SpeechBubble({ text }: { text: string }) {
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         boxShadow: '0 6px 22px rgba(0,0,0,0.35)',
+        textAlign: 'center',
       }}
     >
       {text}
@@ -853,7 +855,8 @@ function SpeechBubble({ text }: { text: string }) {
         style={{
           position: 'absolute',
           bottom: -7,
-          left: 22,
+          left: '50%',
+          transform: 'translateX(-50%)',
           width: 0,
           height: 0,
           borderLeft: '8px solid transparent',
