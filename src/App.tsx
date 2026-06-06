@@ -200,8 +200,8 @@ function CornerCapy({
   allDone: boolean;
   onClick: () => void;
 }) {
-  const showCheck = allDone;
-  const badgeText = showCheck ? '✓' : tasksCount === 0 ? '+' : String(undoneCount);
+  const showBadge = tasksCount > 0;
+  const badgeText = allDone ? '✓' : String(undoneCount);
   return (
     <ClickableRegion
       style={{
@@ -227,27 +227,29 @@ function CornerCapy({
       >
         <Capybara width={CORNER_W} variant="sleeping" />
       </div>
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: 28,
-          height: 28,
-          borderRadius: 14,
-          background: COLORS.bg,
-          color: COLORS.text,
-          fontSize: 13,
-          fontWeight: 600,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: `1px solid ${COLORS.border}`,
-          boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
-        }}
-      >
-        {badgeText}
-      </div>
+      {showBadge ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            background: COLORS.bg,
+            color: COLORS.text,
+            fontSize: 13,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: `1px solid ${COLORS.border}`,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+          }}
+        >
+          {badgeText}
+        </div>
+      ) : null}
     </ClickableRegion>
   );
 }
@@ -279,7 +281,7 @@ function Popover({
       style={{
         position: 'absolute',
         right: CORNER_MARGIN,
-        bottom: CORNER_MARGIN + CORNER_H + 12,
+        bottom: CORNER_MARGIN + CORNER_H + 2,
         width: POPOVER_W,
         background: COLORS.bg,
         color: COLORS.text,
