@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Capybara, CAPY_ASPECT } from './Capybara';
+import { Capybara, CAPY_ASPECT, CAPY_WALK_ASPECT } from './Capybara';
 import type { CapyState, DayRecord } from './types';
 import {
   addDaysKey,
@@ -12,6 +12,7 @@ const CORNER_W = 130;
 const CORNER_H = CORNER_W / CAPY_ASPECT;
 const FLY_W = 160;
 const FLY_H = FLY_W / CAPY_ASPECT;
+const FLY_H_WALK = FLY_W / CAPY_WALK_ASPECT;
 const CORNER_MARGIN = 20;
 const POPOVER_W = 320;
 const HAPPY_DURATION_MS = 4500;
@@ -680,7 +681,7 @@ function Footer({
 
 const FOLLOW_LERP = 0.04;
 const CURSOR_OFFSET_X = -FLY_W / 2;
-const CURSOR_OFFSET_Y = -FLY_H - 20;
+const CURSOR_OFFSET_Y = -FLY_H_WALK - 20;
 const DEPART_MS = 1800;
 
 function FollowingCapy({
@@ -701,7 +702,7 @@ function FollowingCapy({
   );
   const [pos, setPos] = useState<{ x: number; y: number }>(() => ({
     x: -FLY_W - 40,
-    y: window.innerHeight / 2 - FLY_H / 2,
+    y: window.innerHeight / 2 - FLY_H_WALK / 2,
   }));
   const [flipped, setFlipped] = useState(false);
   const cursorRef = useRef<{ x: number; y: number }>({
@@ -759,13 +760,15 @@ function FollowingCapy({
         } else {
           const c = cursorRef.current;
           targetX = clamp(c.x + CURSOR_OFFSET_X, 8, window.innerWidth - FLY_W - 8);
-          targetY = clamp(c.y + CURSOR_OFFSET_Y, 80, window.innerHeight - FLY_H - 16);
+          targetY = clamp(c.y + CURSOR_OFFSET_Y, 80, window.innerHeight - FLY_H_WALK - 16);
         }
         const dx = targetX - p.x;
         const dy = targetY - p.y;
         const next = { x: p.x + dx * FOLLOW_LERP, y: p.y + dy * FOLLOW_LERP };
-        const cursorIsLeft = cursorRef.current.x < next.x + FLY_W / 2;
-        setFlipped(cursorIsLeft && s !== 'departing');
+        // Both PNG assets face LEFT natively. Flip when the capybara should
+        // face RIGHT (i.e. cursor is to the right of its midpoint).
+        const cursorIsRight = cursorRef.current.x > next.x + FLY_W / 2;
+        setFlipped(cursorIsRight && s !== 'departing');
         posRef.current = next;
         setPos(next);
       }
@@ -793,7 +796,7 @@ function FollowingCapy({
         left: pos.x,
         top: pos.y,
         width: FLY_W,
-        height: FLY_H,
+        height: FLY_H_WALK,
         pointerEvents: 'none',
       }}
     >
@@ -801,7 +804,7 @@ function FollowingCapy({
         style={{
           position: 'relative',
           width: FLY_W,
-          height: FLY_H,
+          height: FLY_H_WALK,
           cursor: stage === 'departing' ? 'default' : 'pointer',
           pointerEvents: 'auto',
         }}
@@ -815,7 +818,7 @@ function FollowingCapy({
             transformOrigin: 'center bottom',
           }}
         >
-          <Capybara width={FLY_W} variant="awake" flipX={flipped} />
+          <Capybara width={FLY_W} variant="walking" flipX={flipped} />
         </div>
         {stage !== 'departing' ? <SpeechBubble text={text} /> : null}
       </ClickableRegion>
