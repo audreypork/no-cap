@@ -71,10 +71,10 @@ input, button {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* 4-frame sprite walk: shifts the inner strip left by 75% of its own
-   width in 4 discrete steps, so the visible window snaps through
-   frame 0, 1, 2, 3. */
+/* 4-frame sprite walk: paired with steps(4), each jump shifts the strip
+   left by exactly one frame (25% of its width), snapping through
+   frames 0, 1, 2, 3. -100% itself is only hit at the loop instant. */
 @keyframes walkCycle {
   from { transform: translateX(0); }
-  to   { transform: translateX(-75%); }
+  to   { transform: translateX(-100%); }
 }
