@@ -694,7 +694,7 @@ function CheckInBand({
             color: remindHover ? PANEL.ink : PANEL.muted,
             background: 'transparent',
             border: 'none',
-            borderBottom: `1px solid ${PANEL.ink}`,
+            borderBottom: '1px solid rgba(181,168,147,0.45)',
             padding: '0 0 4px',
             cursor: 'pointer',
             transition: 'color 120ms',
