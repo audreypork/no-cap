@@ -3,6 +3,7 @@ import { Capybara, CAPY_ASPECT, CAPY_WALK_ASPECT } from './Capybara';
 import type { CapyState, DayRecord } from './types';
 import {
   addDaysKey,
+  format12h,
   formatHeaderDate,
   isAfterStartTimeToday,
   localDateKey,
@@ -14,9 +15,10 @@ const FLY_W = 160;
 const FLY_H = FLY_W / CAPY_ASPECT;
 const FLY_H_WALK = FLY_W / CAPY_WALK_ASPECT;
 const CORNER_MARGIN = 20;
-const POPOVER_W = 320;
+const POPOVER_W = 380;
 const HAPPY_DURATION_MS = 4500;
 
+// Dark palette — speech bubble + badge.
 const COLORS = {
   bg: '#1F1A14',
   text: '#FBFAF6',
@@ -24,6 +26,22 @@ const COLORS = {
   hover: '#3D2F22',
   border: 'rgba(255,255,255,0.08)',
 };
+
+// Warm cream palette — the popover panel (Figma node 660:6307).
+const PANEL = {
+  bg: '#FBF6EF',
+  band: '#F0EAE0',
+  ink: '#463B2D',
+  muted: '#A89C8D',
+  placeholder: '#CBC0B1',
+  checkbox: '#B5A893',
+  shadow:
+    '0px 1px 1px rgba(70,59,45,0.06), 0px 10px 15px rgba(70,59,45,0.1), 0px 28px 28px rgba(70,59,45,0.08)',
+};
+
+const FONT_PIXEL = "'Silkscreen', monospace";
+const FONT_MONO = "'IBM Plex Mono', monospace";
+const FONT_SANS = "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif";
 
 function ClickableRegion({
   children,
@@ -281,7 +299,7 @@ function Popover({
   onNext: () => void;
   onClose: () => void;
 }) {
-  const popoverHeight = 360;
+  const [showSettings, setShowSettings] = useState(false);
   return (
     <ClickableRegion
       style={{
@@ -289,12 +307,14 @@ function Popover({
         right: CORNER_MARGIN,
         bottom: CORNER_MARGIN + CORNER_H + 2,
         width: POPOVER_W,
-        background: COLORS.bg,
-        color: COLORS.text,
-        borderRadius: 13,
-        padding: '14px 16px 12px',
-        border: `1px solid ${COLORS.border}`,
-        boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+        background: PANEL.bg,
+        color: PANEL.ink,
+        borderRadius: 16,
+        padding: 18,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+        boxShadow: PANEL.shadow,
         pointerEvents: 'auto',
         animation: 'fadeIn 160ms ease-out',
       }}
@@ -305,51 +325,68 @@ function Popover({
         canGoNext={!isViewingToday}
         onPrev={onPrev}
         onNext={onNext}
+        onToggleSettings={() => setShowSettings((s) => !s)}
       />
-      <TaskList record={viewRecord} readonly={isViewingPast} />
       {!isViewingPast ? (
-        <>
-          <StartTimePicker startTime={state.store.startTime} />
-          <RemindMeButton
-            onClick={async () => {
-              await window.capy.bumpTodayCheckinMins(30);
-              onClose();
-            }}
-          />
-        </>
+        <CheckInBand
+          startTime={viewRecord.startTime}
+          onRemind={async () => {
+            await window.capy.bumpTodayCheckinMins(30);
+            onClose();
+          }}
+        />
       ) : null}
-      <Footer
-        launchAtLogin={state.store.launchAtLogin}
-        onQuit={() => window.capy.quitApp()}
-      />
+      <TaskList record={viewRecord} readonly={isViewingPast} />
+      {showSettings ? (
+        <Footer
+          launchAtLogin={state.store.launchAtLogin}
+          onQuit={() => window.capy.quitApp()}
+        />
+      ) : null}
     </ClickableRegion>
   );
 }
 
-function RemindMeButton({ onClick }: { onClick: () => void }) {
-  const [hover, setHover] = useState(false);
+function ChevronIcon({ dir }: { dir: 'left' | 'right' }) {
   return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        marginTop: 12,
-        width: '100%',
-        height: 36,
-        borderRadius: 18,
-        border: `1px solid ${COLORS.border}`,
-        background: hover ? COLORS.hover : 'rgba(255,255,255,0.04)',
-        color: COLORS.text,
-        fontSize: 13,
-        fontWeight: 500,
-        cursor: 'pointer',
-        transition: 'background 120ms',
-      }}
-    >
-      Remind me in 30 mins
-    </button>
+    <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+      <path
+        d={dir === 'left' ? 'M10.5 3.5 L5.5 8.5 L10.5 13.5' : 'M6.5 3.5 L11.5 8.5 L6.5 13.5'}
+        stroke={PANEL.ink}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
+}
+
+function SlidersIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <g stroke={PANEL.ink} strokeWidth="1.5" strokeLinecap="round">
+        <line x1="3" y1="5.5" x2="17" y2="5.5" />
+        <line x1="3" y1="10" x2="17" y2="10" />
+        <line x1="3" y1="14.5" x2="17" y2="14.5" />
+      </g>
+      <circle cx="12.5" cy="5.5" r="2.2" fill={PANEL.bg} stroke={PANEL.ink} strokeWidth="1.5" />
+      <circle cx="7" cy="10" r="2.2" fill={PANEL.bg} stroke={PANEL.ink} strokeWidth="1.5" />
+      <circle cx="14" cy="14.5" r="2.2" fill={PANEL.bg} stroke={PANEL.ink} strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function iconButtonStyle(active: boolean): React.CSSProperties {
+  return {
+    background: 'transparent',
+    border: 'none',
+    padding: 2,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: active ? 'pointer' : 'default',
+    opacity: active ? 1 : 0.25,
+  };
 }
 
 function DateHeader({
@@ -357,57 +394,44 @@ function DateHeader({
   canGoNext,
   onPrev,
   onNext,
+  onToggleSettings,
 }: {
   viewDateKey: string;
   canGoNext: boolean;
   onPrev: () => void;
   onNext: () => void;
+  onToggleSettings: () => void;
 }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 12,
-      }}
-    >
-      <button
-        onClick={onPrev}
-        style={chevronStyle(true)}
-        aria-label="Previous day"
-      >
-        ‹
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <button onClick={onPrev} style={iconButtonStyle(true)} aria-label="Previous day">
+        <ChevronIcon dir="left" />
       </button>
-      <div style={{ fontSize: 14, fontWeight: 500, letterSpacing: 0.2 }}>
+      <div
+        style={{
+          fontFamily: FONT_PIXEL,
+          fontSize: 19,
+          letterSpacing: -0.5,
+          color: PANEL.ink,
+          lineHeight: '19px',
+        }}
+      >
         {formatHeaderDate(viewDateKey)}
       </div>
       <button
         onClick={onNext}
         disabled={!canGoNext}
-        style={chevronStyle(canGoNext)}
+        style={iconButtonStyle(canGoNext)}
         aria-label="Next day"
       >
-        ›
+        <ChevronIcon dir="right" />
+      </button>
+      <div style={{ flex: 1 }} />
+      <button onClick={onToggleSettings} style={iconButtonStyle(true)} aria-label="Settings">
+        <SlidersIcon />
       </button>
     </div>
   );
-}
-
-function chevronStyle(active: boolean): React.CSSProperties {
-  return {
-    background: 'transparent',
-    border: 'none',
-    color: COLORS.text,
-    fontSize: 20,
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    cursor: active ? 'pointer' : 'default',
-    opacity: active ? 0.85 : 0.25,
-    padding: 0,
-    lineHeight: 1,
-  };
 }
 
 function TaskList({
@@ -418,7 +442,7 @@ function TaskList({
   readonly: boolean;
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
       {[0, 1, 2].map((i) => {
         const task = record.tasks[i];
         return (
@@ -464,13 +488,21 @@ function TaskRow({
   const isEmpty = !task;
   const done = task?.done ?? false;
 
+  const textStyle: React.CSSProperties = {
+    flex: 1,
+    fontFamily: FONT_SANS,
+    fontSize: 18,
+    letterSpacing: -0.54,
+    color: task?.title ? PANEL.ink : PANEL.placeholder,
+  };
+
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 10,
-        padding: '4px 0',
+        gap: 8,
+        padding: '8px 0 8px 14px',
       }}
     >
       <button
@@ -480,15 +512,14 @@ function TaskRow({
         disabled={readonly || isEmpty}
         aria-label={done ? 'Mark undone' : 'Mark done'}
         style={{
-          width: 18,
-          height: 18,
-          borderRadius: 9,
-          border: `1.5px ${isEmpty ? 'dashed' : 'solid'} ${
-            done ? COLORS.text : isEmpty ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.4)'
-          }`,
-          background: done ? COLORS.text : 'transparent',
-          color: COLORS.bg,
-          fontSize: 11,
+          width: 12,
+          height: 12,
+          borderRadius: 2,
+          border: `0.75px solid ${done ? PANEL.ink : PANEL.checkbox}`,
+          background: done ? PANEL.ink : 'transparent',
+          color: PANEL.bg,
+          fontSize: 9,
+          lineHeight: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -512,14 +543,13 @@ function TaskRow({
               setEditing(false);
             }
           }}
-          placeholder="Add a priority…"
+          placeholder="Add a priority..."
           style={{
-            flex: 1,
+            ...textStyle,
             background: 'transparent',
             border: 'none',
-            color: COLORS.text,
-            fontSize: 13,
             padding: 0,
+            color: PANEL.ink,
             textDecoration: done ? 'line-through' : 'none',
           }}
         />
@@ -529,19 +559,17 @@ function TaskRow({
             if (!readonly) setEditing(true);
           }}
           style={{
-            flex: 1,
-            fontSize: 13,
-            color: task?.title ? COLORS.text : COLORS.textMuted,
+            ...textStyle,
+            color: done ? PANEL.muted : textStyle.color,
             textDecoration: done ? 'line-through' : 'none',
-            opacity: done ? 0.55 : 1,
             cursor: readonly ? 'default' : 'text',
-            minHeight: 18,
+            minHeight: 22,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
           }}
         >
-          {task?.title || (readonly ? '—' : 'Add a priority…')}
+          {task?.title || (readonly ? '—' : 'Add a priority...')}
         </div>
       )}
     </div>
@@ -552,19 +580,24 @@ function nowHHMM(d: Date = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-function StartTimePicker({ startTime }: { startTime: string }) {
+function CheckInBand({
+  startTime,
+  onRemind,
+}: {
+  startTime: string;
+  onRemind: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(startTime);
-  const [minTime, setMinTime] = useState(() => nowHHMM());
   const [flash, setFlash] = useState(false);
-
-  useEffect(() => setDraft(startTime), [startTime]);
+  const [remindHover, setRemindHover] = useState(false);
 
   useEffect(() => {
-    const id = window.setInterval(() => setMinTime(nowHHMM()), 30_000);
-    return () => window.clearInterval(id);
-  }, []);
+    if (!editing) setDraft(startTime);
+  }, [startTime, editing]);
 
   const commit = async () => {
+    setEditing(false);
     const current = nowHHMM();
     if (draft < current) {
       setDraft(startTime);
@@ -580,41 +613,96 @@ function StartTimePicker({ startTime }: { startTime: string }) {
   return (
     <div
       style={{
-        marginTop: 14,
+        background: PANEL.band,
+        borderRadius: 11,
+        padding: '14px 16px',
         display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        fontSize: 12,
-        color: COLORS.textMuted,
+        flexDirection: 'column',
+        gap: 6,
       }}
     >
-      <span>Check in at</span>
-      <input
-        type="time"
-        value={draft}
-        min={minTime}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-        }}
+      <div
         style={{
-          background: flash ? 'rgba(220,80,80,0.18)' : 'rgba(255,255,255,0.06)',
-          border: `1px solid ${flash ? 'rgba(220,80,80,0.45)' : COLORS.border}`,
-          color: COLORS.text,
+          fontFamily: FONT_MONO,
+          fontWeight: 500,
           fontSize: 12,
-          padding: '4px 8px',
-          borderRadius: 6,
-          fontFamily: 'inherit',
-          colorScheme: 'dark',
-          transition: 'background 200ms, border-color 200ms',
+          letterSpacing: 1.6,
+          textTransform: 'uppercase',
+          color: flash ? 'rgba(200,80,70,0.9)' : PANEL.muted,
+          transition: 'color 200ms',
         }}
-      />
-      {flash ? (
-        <span style={{ fontSize: 11, color: 'rgba(220,80,80,0.85)' }}>
-          must be in the future
-        </span>
-      ) : null}
+      >
+        {flash ? 'Must be in the future' : 'Check in'}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        {editing ? (
+          <input
+            autoFocus
+            type="time"
+            value={draft}
+            min={nowHHMM()}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              if (e.key === 'Escape') {
+                setDraft(startTime);
+                setEditing(false);
+              }
+            }}
+            style={{
+              fontFamily: FONT_MONO,
+              fontWeight: 500,
+              fontSize: 18,
+              letterSpacing: -0.2,
+              color: PANEL.ink,
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              colorScheme: 'light',
+            }}
+          />
+        ) : (
+          <div
+            onClick={() => setEditing(true)}
+            style={{
+              fontFamily: FONT_MONO,
+              fontWeight: 500,
+              fontSize: 18,
+              letterSpacing: -0.2,
+              color: PANEL.ink,
+              cursor: 'text',
+            }}
+          >
+            {format12h(startTime)}
+          </div>
+        )}
+        <button
+          onClick={onRemind}
+          onMouseEnter={() => setRemindHover(true)}
+          onMouseLeave={() => setRemindHover(false)}
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 14,
+            letterSpacing: -0.2,
+            color: remindHover ? PANEL.ink : PANEL.muted,
+            background: 'transparent',
+            border: 'none',
+            borderBottom: `1px solid ${PANEL.ink}`,
+            padding: '0 0 4px',
+            cursor: 'pointer',
+            transition: 'color 120ms',
+          }}
+        >
+          Remind me in 30 mins
+        </button>
+      </div>
     </div>
   );
 }
@@ -629,18 +717,18 @@ function Footer({
   return (
     <div
       style={{
-        marginTop: 14,
-        paddingTop: 10,
-        borderTop: `1px solid ${COLORS.border}`,
+        paddingTop: 12,
+        borderTop: `1px solid ${PANEL.band}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        fontFamily: FONT_MONO,
         fontSize: 11,
-        color: COLORS.textMuted,
+        color: PANEL.muted,
       }}
     >
       <span>Capy stops at midnight.</span>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <label
           style={{
             display: 'flex',
@@ -655,7 +743,7 @@ function Footer({
             onChange={async (e) => {
               await window.capy.setLaunchAtLogin(e.target.checked);
             }}
-            style={{ accentColor: COLORS.text, cursor: 'pointer' }}
+            style={{ accentColor: PANEL.ink, cursor: 'pointer' }}
           />
           Launch at login
         </label>
@@ -664,7 +752,8 @@ function Footer({
           style={{
             background: 'transparent',
             border: 'none',
-            color: COLORS.textMuted,
+            color: PANEL.muted,
+            fontFamily: FONT_MONO,
             fontSize: 11,
             cursor: 'pointer',
             padding: 0,

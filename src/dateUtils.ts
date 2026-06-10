@@ -14,8 +14,15 @@ export function formatHeaderDate(key: string): string {
   const d = parseDateKey(key);
   const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
   const day = d.getDate();
-  const month = d.toLocaleDateString('en-US', { month: 'short' });
+  const month = d.toLocaleDateString('en-US', { month: 'long' });
   return `${weekday} ${day} ${month}`;
+}
+
+export function format12h(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  const period = h >= 12 ? 'pm' : 'am';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
 }
 
 export function msUntilNextMidnight(now: Date = new Date()): number {
