@@ -12,11 +12,14 @@ export type DayRecord = {
   currentTaskIndex: number;
 };
 
+export type Mood = 'naughty' | 'nice';
+
 export type CapyStoreShape = {
   days: Record<string, DayRecord>;
   startTime: string;
   pause?: { until: number };
   launchAtLogin: boolean;
+  mood: Mood;
 };
 
 export type CapyState = {

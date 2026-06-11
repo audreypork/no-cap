@@ -35,9 +35,12 @@ const PANEL = {
   muted: '#A89C8D',
   placeholder: '#CBC0B1',
   checkbox: '#B5A893',
+  hairline: '#C5BCB1',
   shadow:
     '0px 1px 1px rgba(70,59,45,0.06), 0px 10px 15px rgba(70,59,45,0.1), 0px 28px 28px rgba(70,59,45,0.08)',
 };
+
+const FEEDBACK_URL = 'https://github.com/audreypork/no-cap/issues';
 
 const FONT_PIXEL = "'Silkscreen', monospace";
 const FONT_MONO = "'IBM Plex Mono', monospace";
@@ -162,6 +165,7 @@ export function App() {
       {followActive ? (
         <FollowingCapy
           count={undoneCount}
+          mood={state.store.mood ?? 'naughty'}
           popoverOpen={popoverOpen}
           shouldDepart={followDeparting}
           onClick={() => {
@@ -299,7 +303,7 @@ function Popover({
   onNext: () => void;
   onClose: () => void;
 }) {
-  const [showSettings, setShowSettings] = useState(false);
+  const [view, setView] = useState<'main' | 'settings'>('main');
   return (
     <ClickableRegion
       style={{
@@ -320,29 +324,29 @@ function Popover({
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <DateHeader
-        viewDateKey={viewDateKey}
-        canGoNext={!isViewingToday}
-        onPrev={onPrev}
-        onNext={onNext}
-        onToggleSettings={() => setShowSettings((s) => !s)}
-      />
-      {!isViewingPast ? (
-        <CheckInBand
-          startTime={viewRecord.startTime}
-          onRemind={async () => {
-            await window.capy.bumpTodayCheckinMins(30);
-            onClose();
-          }}
-        />
-      ) : null}
-      <TaskList record={viewRecord} readonly={isViewingPast} />
-      {showSettings ? (
-        <Footer
-          launchAtLogin={state.store.launchAtLogin}
-          onQuit={() => window.capy.quitApp()}
-        />
-      ) : null}
+      {view === 'settings' ? (
+        <SettingsView state={state} onClose={() => setView('main')} />
+      ) : (
+        <>
+          <DateHeader
+            viewDateKey={viewDateKey}
+            canGoNext={!isViewingToday}
+            onPrev={onPrev}
+            onNext={onNext}
+            onOpenSettings={() => setView('settings')}
+          />
+          {!isViewingPast ? (
+            <CheckInBand
+              startTime={viewRecord.startTime}
+              onRemind={async () => {
+                await window.capy.bumpTodayCheckinMins(30);
+                onClose();
+              }}
+            />
+          ) : null}
+          <TaskList record={viewRecord} readonly={isViewingPast} />
+        </>
+      )}
     </ClickableRegion>
   );
 }
@@ -394,13 +398,13 @@ function DateHeader({
   canGoNext,
   onPrev,
   onNext,
-  onToggleSettings,
+  onOpenSettings,
 }: {
   viewDateKey: string;
   canGoNext: boolean;
   onPrev: () => void;
   onNext: () => void;
-  onToggleSettings: () => void;
+  onOpenSettings: () => void;
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -427,10 +431,304 @@ function DateHeader({
         <ChevronIcon dir="right" />
       </button>
       <div style={{ flex: 1 }} />
-      <button onClick={onToggleSettings} style={iconButtonStyle(true)} aria-label="Settings">
+      <button onClick={onOpenSettings} style={iconButtonStyle(true)} aria-label="Settings">
         <SlidersIcon />
       </button>
     </div>
+  );
+}
+
+const SETTING_LABEL: React.CSSProperties = {
+  fontFamily: FONT_MONO,
+  fontWeight: 500,
+  fontSize: 12,
+  letterSpacing: 1.6,
+  textTransform: 'uppercase',
+  color: PANEL.muted,
+};
+
+function SettingRow({
+  label,
+  children,
+  first,
+  last,
+  onClick,
+}: {
+  label: string;
+  children: React.ReactNode;
+  first?: boolean;
+  last?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: `${first ? 2 : 11}px 0 ${last ? 2 : 11}px`,
+        cursor: onClick ? 'pointer' : 'default',
+      }}
+    >
+      <span style={SETTING_LABEL}>{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function TogglePill({ on, onClick }: { on: boolean; onClick: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      role="switch"
+      aria-checked={on}
+      style={{
+        width: 32,
+        height: 18,
+        borderRadius: 10,
+        background: on ? PANEL.ink : PANEL.checkbox,
+        position: 'relative',
+        cursor: 'pointer',
+        flexShrink: 0,
+        transition: 'background 150ms',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          top: 2.5,
+          left: on ? 16.5 : 2.5,
+          width: 13,
+          height: 13,
+          borderRadius: '50%',
+          background: PANEL.bg,
+          transition: 'left 150ms',
+        }}
+      />
+    </div>
+  );
+}
+
+function LockedFlyToggle() {
+  const [wiggleCount, setWiggleCount] = useState(0);
+  const [showNote, setShowNote] = useState(false);
+  const noteTimer = useRef<number | null>(null);
+
+  const poke = () => {
+    setWiggleCount((c) => c + 1);
+    setShowNote(true);
+    if (noteTimer.current) window.clearTimeout(noteTimer.current);
+    noteTimer.current = window.setTimeout(() => setShowNote(false), 1600);
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 10,
+          letterSpacing: 0.4,
+          color: PANEL.muted,
+          opacity: showNote ? 1 : 0,
+          transition: 'opacity 200ms',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        capy must fly
+      </span>
+      <div
+        key={wiggleCount}
+        onClick={poke}
+        style={{
+          width: 32,
+          height: 18,
+          borderRadius: 10,
+          background: PANEL.ink,
+          position: 'relative',
+          opacity: 0.45,
+          cursor: 'not-allowed',
+          flexShrink: 0,
+          animation: wiggleCount > 0 ? 'wiggle 0.18s ease 2' : undefined,
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: 2.5,
+            right: 2.5,
+            width: 13,
+            height: 13,
+            borderRadius: '50%',
+            background: PANEL.bg,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function MoodSeg({
+  mood,
+  onChange,
+}: {
+  mood: 'naughty' | 'nice';
+  onChange: (m: 'naughty' | 'nice') => void;
+}) {
+  const opt = (m: 'naughty' | 'nice', text: string) => (
+    <span
+      onClick={() => onChange(m)}
+      style={{
+        fontFamily: FONT_MONO,
+        fontWeight: 500,
+        fontSize: 10,
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+        color: mood === m ? PANEL.bg : PANEL.muted,
+        background: mood === m ? PANEL.ink : 'transparent',
+        padding: '4px 9px',
+        borderRadius: 6,
+        transition: 'background 150ms, color 150ms',
+        cursor: 'pointer',
+        userSelect: 'none',
+      }}
+    >
+      {text}
+    </span>
+  );
+  return (
+    <div
+      style={{
+        display: 'inline-flex',
+        background: PANEL.bg,
+        borderRadius: 8,
+        padding: 2,
+      }}
+    >
+      {opt('naughty', 'Naughty')}
+      {opt('nice', 'Nice')}
+    </div>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <path d="M15 5L5 15" stroke={PANEL.checkbox} strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M5 5L15 15" stroke={PANEL.checkbox} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ArrowOutIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M4 10L10 4" stroke={PANEL.checkbox} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 4H10V9" stroke={PANEL.checkbox} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function QuitIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path
+        d="M5.25 2.5H3.5C2.95 2.5 2.5 2.95 2.5 3.5V10.5C2.5 11.05 2.95 11.5 3.5 11.5H5.25"
+        stroke={PANEL.checkbox}
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M9 9.5L11.5 7L9 4.5" stroke={PANEL.checkbox} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M11.5 7H6" stroke={PANEL.checkbox} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SettingsView({
+  state,
+  onClose,
+}: {
+  state: CapyState;
+  onClose: () => void;
+}) {
+  const mood = state.store.mood ?? 'naughty';
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', height: 25 }}>
+        <div
+          style={{
+            fontFamily: FONT_PIXEL,
+            fontSize: 19,
+            letterSpacing: -0.5,
+            lineHeight: '19px',
+            color: PANEL.ink,
+            marginLeft: 2,
+          }}
+        >
+          Settings
+        </div>
+        <div style={{ flex: 1 }} />
+        <button onClick={onClose} style={iconButtonStyle(true)} aria-label="Close settings">
+          <CloseIcon />
+        </button>
+      </div>
+
+      <div
+        style={{
+          background: PANEL.band,
+          borderRadius: 11,
+          padding: '14px 16px',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <SettingRow label="Capy stops at" first>
+          <span
+            style={{
+              fontFamily: FONT_MONO,
+              fontWeight: 500,
+              fontSize: 14,
+              letterSpacing: -0.2,
+              color: PANEL.ink,
+              borderBottom: `0.5px solid ${PANEL.hairline}`,
+              padding: '2px 0',
+            }}
+          >
+            12:00 am
+          </span>
+        </SettingRow>
+        <SettingRow label="Capy flies">
+          <LockedFlyToggle />
+        </SettingRow>
+        <SettingRow label="Capy is" last>
+          <MoodSeg mood={mood} onChange={(m) => window.capy.setMood(m)} />
+        </SettingRow>
+      </div>
+
+      <div
+        style={{
+          background: PANEL.band,
+          borderRadius: 11,
+          padding: '14px 16px',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <SettingRow label="Launch at login" first>
+          <TogglePill
+            on={state.store.launchAtLogin}
+            onClick={() => window.capy.setLaunchAtLogin(!state.store.launchAtLogin)}
+          />
+        </SettingRow>
+        <SettingRow label="Give feedback" onClick={() => window.capy.openExternal(FEEDBACK_URL)}>
+          <ArrowOutIcon />
+        </SettingRow>
+        <SettingRow label="Quit Capy" last onClick={() => window.capy.quitApp()}>
+          <QuitIcon />
+        </SettingRow>
+      </div>
+    </>
   );
 }
 
@@ -707,67 +1005,6 @@ function CheckInBand({
   );
 }
 
-function Footer({
-  launchAtLogin,
-  onQuit,
-}: {
-  launchAtLogin: boolean;
-  onQuit: () => void;
-}) {
-  return (
-    <div
-      style={{
-        paddingTop: 12,
-        borderTop: `1px solid ${PANEL.band}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        fontFamily: FONT_MONO,
-        fontSize: 11,
-        color: PANEL.muted,
-      }}
-    >
-      <span>Capy stops at midnight.</span>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            cursor: 'pointer',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={launchAtLogin}
-            onChange={async (e) => {
-              await window.capy.setLaunchAtLogin(e.target.checked);
-            }}
-            style={{ accentColor: PANEL.ink, cursor: 'pointer' }}
-          />
-          Launch at login
-        </label>
-        <button
-          onClick={onQuit}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: PANEL.muted,
-            fontFamily: FONT_MONO,
-            fontSize: 11,
-            cursor: 'pointer',
-            padding: 0,
-            textDecoration: 'underline',
-            textDecorationStyle: 'dotted',
-          }}
-        >
-          Quit
-        </button>
-      </div>
-    </div>
-  );
-}
-
 const FOLLOW_LERP = 0.04;
 const CURSOR_OFFSET_X = -FLY_W / 2;
 const CURSOR_OFFSET_Y = -FLY_H_WALK - 20;
@@ -775,12 +1012,14 @@ const DEPART_MS = 1800;
 
 function FollowingCapy({
   count,
+  mood,
   popoverOpen,
   shouldDepart,
   onClick,
   onComplete,
 }: {
   count: number;
+  mood: 'naughty' | 'nice';
   popoverOpen: boolean;
   shouldDepart: boolean;
   onClick: () => void;
@@ -876,7 +1115,11 @@ function FollowingCapy({
     return () => window.clearTimeout(t);
   }, [stage, onComplete]);
 
-  const text = `lazy ass bitch you haven't done your ${count} task${count === 1 ? '' : 's'} yet`;
+  const plural = count === 1 ? '' : 's';
+  const text =
+    mood === 'naughty'
+      ? `lazy ass bitch you haven't done your ${count} task${plural} yet`
+      : `you haven't done your ${count} task${plural} yet!!`;
 
   return (
     <div

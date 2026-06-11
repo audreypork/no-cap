@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, ipcMain, screen, shell } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import Store from 'electron-store';
@@ -24,6 +24,7 @@ const store = new Store<CapyStoreShape>({
     days: {},
     startTime: DEFAULT_START_TIME,
     launchAtLogin: true,
+    mood: 'naughty',
   },
 });
 
@@ -64,15 +65,20 @@ let flybyInProgress = false;
 let flybyCheckTimer: NodeJS.Timeout | null = null;
 let rolloverTimer: NodeJS.Timeout | null = null;
 
+function snapshotStore() {
+  return {
+    days: store.get('days'),
+    startTime: store.get('startTime'),
+    pause: store.get('pause'),
+    launchAtLogin: store.get('launchAtLogin'),
+    mood: store.get('mood'),
+  };
+}
+
 function broadcastState() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   const state = {
-    store: {
-      days: store.get('days'),
-      startTime: store.get('startTime'),
-      pause: store.get('pause'),
-      launchAtLogin: store.get('launchAtLogin'),
-    },
+    store: snapshotStore(),
     today: localDateKey(),
     now: Date.now(),
   };
@@ -186,15 +192,21 @@ function registerIpc() {
   });
 
   ipcMain.handle('get-state', () => ({
-    store: {
-      days: store.get('days'),
-      startTime: store.get('startTime'),
-      pause: store.get('pause'),
-      launchAtLogin: store.get('launchAtLogin'),
-    },
+    store: snapshotStore(),
     today: localDateKey(),
     now: Date.now(),
   }));
+
+  ipcMain.handle('set-mood', (_e, mood: 'naughty' | 'nice') => {
+    store.set('mood', mood);
+    broadcastState();
+  });
+
+  ipcMain.handle('open-external', (_e, url: string) => {
+    if (typeof url === 'string' && url.startsWith('https://')) {
+      shell.openExternal(url);
+    }
+  });
 
   ipcMain.handle('add-task', (_e, title: string) => {
     const today = getTodayRecord();
