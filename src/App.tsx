@@ -201,10 +201,6 @@ export function App() {
           mood={state.store.mood ?? 'naughty'}
           popoverOpen={popoverOpen}
           shouldDepart={followDeparting}
-          onClick={() => {
-            setViewDateKey(today);
-            setPopoverOpen((o) => !o);
-          }}
           onComplete={() => {
             setFollowActive(false);
             setFollowDeparting(false);
@@ -1152,14 +1148,12 @@ function FollowingCapy({
   mood,
   popoverOpen,
   shouldDepart,
-  onClick,
   onComplete,
 }: {
   count: number;
   mood: 'naughty' | 'nice';
   popoverOpen: boolean;
   shouldDepart: boolean;
-  onClick: () => void;
   onComplete: () => void;
 }) {
   // The two sprite sheets have different proportions, so the on-screen
@@ -1298,16 +1292,12 @@ function FollowingCapy({
         pointerEvents: 'none',
       }}
     >
-      <ClickableRegion
+      <div
         style={{
           position: 'relative',
           width: FLY_W,
           height: flyH,
-          cursor: stage === 'departing' ? 'default' : 'pointer',
-          pointerEvents: 'auto',
-        }}
-        onClick={() => {
-          if (stage !== 'departing') onClick();
+          pointerEvents: 'none',
         }}
       >
         <div
@@ -1323,7 +1313,7 @@ function FollowingCapy({
           />
         </div>
         {stage !== 'departing' ? <SpeechBubble text={text} /> : null}
-      </ClickableRegion>
+      </div>
     </div>
   );
 }
