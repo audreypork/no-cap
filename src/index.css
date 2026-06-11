@@ -57,6 +57,13 @@ input, button {
   75%      { transform: translateX(2px); }
 }
 
+/* one-shot radial sparkle: flies out to --tx/--ty while fading */
+@keyframes sparkleBurst {
+  0%   { transform: translate(0, 0) scale(0); opacity: 0; }
+  25%  { opacity: 1; transform: translate(calc(var(--tx) * 0.3), calc(var(--ty) * 0.3)) scale(1.15); }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0.5); opacity: 0; }
+}
+
 /* 4-frame sprite walk: paired with steps(4), each jump shifts the strip
    left by exactly one frame (25% of its width), snapping through
    frames 0, 1, 2, 3. -100% itself is only hit at the loop instant. */

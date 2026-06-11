@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Capybara, CAPY_ASPECT, CAPY_CHEER_ASPECT, CAPY_WALK_ASPECT } from './Capybara';
 import bedImg from './assets/bed.png';
-import hatImg from './assets/party-hat.png';
 import { getFlybyRoast } from './roasts';
 import type { CapyState, DayRecord } from './types';
 import {
@@ -131,6 +130,21 @@ export function App() {
   const undoneCount = todayRecord.tasks.filter((t) => !t.done).length;
   const allDone = todayRecord.tasks.length === 3 && undoneCount === 0;
 
+  // Fire the sparkle burst the moment the party capy becomes visible in
+  // the corner — either right away, or after he finishes walking home.
+  const cornerParty = allDone && !followActive;
+  const prevCornerPartyRef = useRef(cornerParty);
+  const [burst, setBurst] = useState(false);
+  useEffect(() => {
+    const prev = prevCornerPartyRef.current;
+    prevCornerPartyRef.current = cornerParty;
+    if (!prev && cornerParty) {
+      setBurst(true);
+      const t = window.setTimeout(() => setBurst(false), 1200);
+      return () => window.clearTimeout(t);
+    }
+  }, [cornerParty]);
+
   const shouldFollow = useMemo(() => {
     if (!state) return false;
     if (undoneCount === 0) return false;
@@ -199,7 +213,8 @@ export function App() {
 
       {!followActive ? (
         <CornerCapy
-          hat={allDone}
+          party={allDone}
+          burst={burst}
           onClick={() => {
             setViewDateKey(today);
             setPopoverOpen((o) => !o);
@@ -273,7 +288,15 @@ function CornerBed({ onClick }: { onClick: () => void }) {
   );
 }
 
-function CornerCapy({ hat, onClick }: { hat: boolean; onClick: () => void }) {
+function CornerCapy({
+  party,
+  burst,
+  onClick,
+}: {
+  party: boolean;
+  burst: boolean;
+  onClick: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
   return (
     <ClickableRegion
@@ -297,34 +320,58 @@ function CornerCapy({ hat, onClick }: { hat: boolean; onClick: () => void }) {
           bottom: 0,
           width: CORNER_W,
           height: CORNER_H,
+          display: 'flex',
+          alignItems: 'flex-end',
           transformOrigin: 'bottom right',
           transition: 'transform 140ms ease-out',
           transform: hovered ? 'scale(1.04)' : 'scale(1)',
         }}
       >
-        <Capybara width={CORNER_W} variant="sleeping" />
-        {hat ? (
-          // Party hat earned by finishing all three tasks. The source art
-          // leans right; mirrored so it tips left over his crown.
-          <img
-            src={hatImg}
-            width={36}
-            height={36 * (367 / 256)}
-            alt=""
-            draggable={false}
-            style={{
-              position: 'absolute',
-              left: 4,
-              top: -32,
-              transform: 'scaleX(-1)',
-              userSelect: 'none',
-              pointerEvents: 'none',
-              filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.15))',
-            }}
-          />
-        ) : null}
+        <Capybara width={CORNER_W} variant={party ? 'party' : 'sleeping'} />
       </div>
+      {burst ? <SparkleBurst /> : null}
     </ClickableRegion>
+  );
+}
+
+function SparkleBurst() {
+  // One-shot radial burst from the capy's center when the day completes.
+  const stars = [
+    { tx: -64, ty: -38, delay: 0 },
+    { tx: -30, ty: -70, delay: 40 },
+    { tx: 18, ty: -78, delay: 80 },
+    { tx: 58, ty: -52, delay: 20 },
+    { tx: -78, ty: 6, delay: 60 },
+    { tx: 72, ty: -4, delay: 100 },
+    { tx: -48, ty: 34, delay: 120 },
+    { tx: 44, ty: 30, delay: 90 },
+  ];
+  return (
+    <>
+      {stars.map((s, i) => (
+        <div
+          key={i}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: 12,
+            height: 12,
+            marginLeft: -6,
+            marginTop: -6,
+            pointerEvents: 'none',
+            opacity: 0,
+            animation: `sparkleBurst 800ms ease-out ${s.delay}ms forwards`,
+            ['--tx' as string]: `${s.tx}px`,
+            ['--ty' as string]: `${s.ty}px`,
+          }}
+        >
+          <svg viewBox="0 0 10 10" width="12" height="12">
+            <path d="M5 0 L6 4 L10 5 L6 6 L5 10 L4 6 L0 5 L4 4 Z" fill="#FFD66B" />
+          </svg>
+        </div>
+      ))}
+    </>
   );
 }
 

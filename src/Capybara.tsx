@@ -1,9 +1,10 @@
 import React from 'react';
 import capyImg from './assets/capy.png';
+import capyPartyImg from './assets/capy-party.png';
 import capyWalkImg from './assets/capy-walk.png';
 import capyCheerImg from './assets/capy-cheer.png';
 
-type Variant = 'sleeping' | 'awake' | 'happy' | 'walking' | 'cheering';
+type Variant = 'sleeping' | 'party' | 'awake' | 'happy' | 'walking' | 'cheering';
 
 type Props = {
   width: number;
@@ -12,10 +13,12 @@ type Props = {
   flipX?: boolean;
 };
 
-// Intrinsic dimensions of the static capy PNG.
+// Intrinsic dimensions of the static capy PNGs.
 export const CAPY_SRC_W = 640;
 export const CAPY_SRC_H = 328;
 export const CAPY_ASPECT = CAPY_SRC_W / CAPY_SRC_H;
+// Party-hat version is slightly taller (the hat).
+export const CAPY_PARTY_ASPECT = 640 / 364;
 
 // Sprite sheets: 4 frames laid out horizontally, per-frame intrinsic
 // size from the cropped strips. facesRight notes the native direction
@@ -33,10 +36,11 @@ export function Capybara({ width, variant = 'awake', flipX = false }: Props) {
   if (variant === 'walking' || variant === 'cheering') {
     return <SpriteCapybara width={width} faceRight={flipX} sheet={SHEETS[variant]} />;
   }
-  const height = width / CAPY_ASPECT;
+  const isParty = variant === 'party';
+  const height = width / (isParty ? CAPY_PARTY_ASPECT : CAPY_ASPECT);
   return (
     <img
-      src={capyImg}
+      src={isParty ? capyPartyImg : capyImg}
       width={width}
       height={height}
       alt="capybara"
