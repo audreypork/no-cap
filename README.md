@@ -19,10 +19,7 @@ The only ways to make him go back to sleep:
 3. Open it — find the sleeping capybara in the bottom-right corner of
    your screen
 
-> **"Apple could not verify this app"?** If you see this warning,
-> right-click `Capy.app` → **Open** → **Open** (only needed the first
-> time), or approve it under **System Settings → Privacy & Security**.
-
+The app is signed and notarized, so it opens without warnings.
 Requires an Apple Silicon Mac (M1 or later) running macOS.
 
 ## Use
