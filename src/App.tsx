@@ -13,6 +13,7 @@ import {
 } from './dateUtils';
 
 const CORNER_W = 105;
+const CORNER_PARTY_W = 135;
 const CORNER_H = CORNER_W / CAPY_ASPECT;
 const BED_ASPECT = 640 / 377;
 const BED_W = 112;
@@ -330,12 +331,18 @@ function CornerCapy({
           height: CORNER_H,
           display: 'flex',
           alignItems: 'flex-end',
+          justifyContent: 'flex-end',
           transformOrigin: 'bottom right',
           transition: 'transform 140ms ease-out',
           transform: hovered ? 'scale(1.02)' : 'scale(1)',
         }}
       >
-        <Capybara width={CORNER_W} variant={party ? 'party' : 'sleeping'} />
+        {/* Party capy renders a bit bigger — he earned it. Overflow goes
+            up/left thanks to the bottom-right alignment. */}
+        <Capybara
+          width={party ? CORNER_PARTY_W : CORNER_W}
+          variant={party ? 'party' : 'sleeping'}
+        />
       </div>
       {burst ? <SparkleBurst /> : null}
     </ClickableRegion>
