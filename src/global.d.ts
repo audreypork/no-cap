@@ -19,6 +19,7 @@ declare global {
       clearPause: () => Promise<void>;
       setLaunchAtLogin: (enabled: boolean) => Promise<void>;
       setMood: (mood: 'naughty' | 'nice') => Promise<void>;
+      setStopTime: (time: string) => Promise<void>;
       openExternal: (url: string) => Promise<void>;
       quitApp: () => Promise<void>;
     };

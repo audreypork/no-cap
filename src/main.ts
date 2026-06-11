@@ -23,6 +23,7 @@ const store = new Store<CapyStoreShape>({
   defaults: {
     days: {},
     startTime: DEFAULT_START_TIME,
+    stopTime: '00:00',
     launchAtLogin: true,
     mood: 'naughty',
   },
@@ -69,6 +70,7 @@ function snapshotStore() {
   return {
     days: store.get('days'),
     startTime: store.get('startTime'),
+    stopTime: store.get('stopTime'),
     pause: store.get('pause'),
     launchAtLogin: store.get('launchAtLogin'),
     mood: store.get('mood'),
@@ -199,6 +201,11 @@ function registerIpc() {
 
   ipcMain.handle('set-mood', (_e, mood: 'naughty' | 'nice') => {
     store.set('mood', mood);
+    broadcastState();
+  });
+
+  ipcMain.handle('set-stop-time', (_e, time: string) => {
+    store.set('stopTime', time);
     broadcastState();
   });
 

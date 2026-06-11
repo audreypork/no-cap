@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('capy', {
   setLaunchAtLogin: (enabled: boolean) =>
     ipcRenderer.invoke('set-launch-at-login', enabled),
   setMood: (mood: 'naughty' | 'nice') => ipcRenderer.invoke('set-mood', mood),
+  setStopTime: (time: string) => ipcRenderer.invoke('set-stop-time', time),
   openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
   quitApp: () => ipcRenderer.invoke('quit-app'),
 });

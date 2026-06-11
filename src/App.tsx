@@ -152,6 +152,12 @@ export function App() {
     if (undoneCount === 0) return false;
     const pause = state.store.pause;
     if (pause && pause.until > now) return false;
+    // Past the daily stop time, capy stays asleep regardless of tasks.
+    // "00:00" means midnight, i.e. no early cutoff (day rollover handles it).
+    const stop = state.store.stopTime ?? '00:00';
+    if (stop !== '00:00' && isAfterStartTimeToday(stop, new Date(now))) {
+      return false;
+    }
     return isAfterStartTimeToday(todayRecord.startTime, new Date(now));
   }, [state, undoneCount, todayRecord.startTime, now]);
 
@@ -758,6 +764,61 @@ function QuitIcon() {
   );
 }
 
+function StopTimeValue({ stopTime }: { stopTime: string }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(stopTime);
+
+  useEffect(() => {
+    if (!editing) setDraft(stopTime);
+  }, [stopTime, editing]);
+
+  const commit = async () => {
+    setEditing(false);
+    if (draft !== stopTime) {
+      await window.capy.setStopTime(draft);
+    }
+  };
+
+  const valueStyle: React.CSSProperties = {
+    fontFamily: FONT_MONO,
+    fontWeight: 500,
+    fontSize: 14,
+    letterSpacing: -0.2,
+    color: PANEL.ink,
+    padding: '2px 0',
+  };
+
+  return editing ? (
+    <input
+      autoFocus
+      type="time"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+        if (e.key === 'Escape') {
+          setDraft(stopTime);
+          setEditing(false);
+        }
+      }}
+      style={{
+        ...valueStyle,
+        background: 'transparent',
+        border: 'none',
+        colorScheme: 'light',
+      }}
+    />
+  ) : (
+    <span
+      onClick={() => setEditing(true)}
+      style={{ ...valueStyle, cursor: 'text' }}
+    >
+      {format12h(stopTime)}
+    </span>
+  );
+}
+
 function SettingsView({
   state,
   onClose,
@@ -797,19 +858,7 @@ function SettingsView({
         }}
       >
         <SettingRow label="Capy stops at" first>
-          <span
-            style={{
-              fontFamily: FONT_MONO,
-              fontWeight: 500,
-              fontSize: 14,
-              letterSpacing: -0.2,
-              color: PANEL.ink,
-              borderBottom: `0.5px solid ${PANEL.hairline}`,
-              padding: '2px 0',
-            }}
-          >
-            12:00 am
-          </span>
+          <StopTimeValue stopTime={state.store.stopTime ?? '00:00'} />
         </SettingRow>
         <SettingRow label="Capy flies">
           <LockedFlyToggle />

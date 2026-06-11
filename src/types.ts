@@ -17,6 +17,8 @@ export type Mood = 'naughty' | 'nice';
 export type CapyStoreShape = {
   days: Record<string, DayRecord>;
   startTime: string;
+  /** "HH:MM" — capy stops for the day at this time. "00:00" = midnight. */
+  stopTime: string;
   pause?: { until: number };
   launchAtLogin: boolean;
   mood: Mood;
