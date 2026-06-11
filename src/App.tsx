@@ -437,13 +437,7 @@ function Popover({
               onOpenSettings={() => setView('settings')}
             />
             {!isViewingPast ? (
-              <CheckInBand
-                startTime={viewRecord.startTime}
-                onRemind={async () => {
-                  await window.capy.bumpTodayCheckinMins(30);
-                  onClose();
-                }}
-              />
+              <CheckInBand startTime={viewRecord.startTime} />
             ) : null}
             <TaskList record={viewRecord} readonly={isViewingPast} />
           </>
@@ -981,17 +975,10 @@ function nowHHMM(d: Date = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-function CheckInBand({
-  startTime,
-  onRemind,
-}: {
-  startTime: string;
-  onRemind: () => void;
-}) {
+function CheckInBand({ startTime }: { startTime: string }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(startTime);
   const [flash, setFlash] = useState(false);
-  const [remindHover, setRemindHover] = useState(false);
 
   useEffect(() => {
     if (!editing) setDraft(startTime);
@@ -1084,25 +1071,6 @@ function CheckInBand({
             {format12h(startTime)}
           </div>
         )}
-        <button
-          onClick={onRemind}
-          onMouseEnter={() => setRemindHover(true)}
-          onMouseLeave={() => setRemindHover(false)}
-          style={{
-            fontFamily: FONT_MONO,
-            fontSize: 14,
-            letterSpacing: -0.2,
-            color: remindHover ? PANEL.ink : PANEL.muted,
-            background: 'transparent',
-            border: 'none',
-            borderBottom: '1px solid rgba(181,168,147,0.45)',
-            padding: '0 0 4px',
-            cursor: 'pointer',
-            transition: 'color 120ms',
-          }}
-        >
-          Remind me in 30 mins
-        </button>
       </div>
     </div>
   );
