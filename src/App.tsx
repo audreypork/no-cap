@@ -13,7 +13,7 @@ import {
 } from './dateUtils';
 
 const CORNER_W = 105;
-const CORNER_PARTY_W = 135;
+const CORNER_PARTY_W = 112;
 const CORNER_H = CORNER_W / CAPY_ASPECT;
 const BED_ASPECT = 640 / 377;
 const BED_W = 112;
