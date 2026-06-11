@@ -1224,7 +1224,7 @@ function FollowingCapy({
 
   useEffect(() => {
     if (mood !== 'naughty') return;
-    const id = window.setInterval(() => setRoast(getFlybyRoast()), 3000);
+    const id = window.setInterval(() => setRoast(getFlybyRoast()), 2000);
     return () => window.clearInterval(id);
   }, [mood]);
 
