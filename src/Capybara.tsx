@@ -22,7 +22,7 @@ export const CAPY_ASPECT = CAPY_SRC_W / CAPY_SRC_H;
 // of the art so flipX can be normalized.
 const SHEETS = {
   walking: { img: capyWalkImg, frames: 4, w: 400, h: 307, facesRight: false },
-  cheering: { img: capyCheerImg, frames: 4, w: 400, h: 308, facesRight: true },
+  cheering: { img: capyCheerImg, frames: 4, w: 400, h: 358, facesRight: false },
 } as const;
 
 export const CAPY_WALK_ASPECT = SHEETS.walking.w / SHEETS.walking.h;
