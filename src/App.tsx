@@ -12,12 +12,12 @@ import {
   localDateKey,
 } from './dateUtils';
 
-const CORNER_W = 130;
+const CORNER_W = 105;
 const CORNER_H = CORNER_W / CAPY_ASPECT;
 const BED_ASPECT = 640 / 377;
-const BED_W = 140;
+const BED_W = 112;
 const BED_H = BED_W / BED_ASPECT;
-const FLY_W = 160;
+const FLY_W = 140;
 const FLY_H = FLY_W / CAPY_ASPECT;
 const FLY_H_WALK = FLY_W / CAPY_WALK_ASPECT;
 const CORNER_MARGIN = 20;
@@ -251,8 +251,8 @@ function CornerBed({ onClick }: { onClick: () => void }) {
         position: 'absolute',
         right: CORNER_MARGIN,
         bottom: CORNER_MARGIN + CORNER_LIFT,
-        width: BED_W + 18,
-        height: BED_H + 18,
+        width: BED_W + 10,
+        height: BED_H + 10,
         pointerEvents: 'auto',
         cursor: 'pointer',
       }}
@@ -269,7 +269,7 @@ function CornerBed({ onClick }: { onClick: () => void }) {
           height: BED_H,
           transformOrigin: 'bottom right',
           transition: 'transform 140ms ease-out',
-          transform: hovered ? 'scale(1.04)' : 'scale(1)',
+          transform: hovered ? 'scale(1.02)' : 'scale(1)',
         }}
       >
         <img
@@ -306,8 +306,8 @@ function CornerCapy({
         position: 'absolute',
         right: CORNER_MARGIN,
         bottom: CORNER_MARGIN + CORNER_LIFT,
-        width: CORNER_W + 18,
-        height: CORNER_H + 18,
+        width: CORNER_W + 10,
+        height: CORNER_H + 10,
         pointerEvents: 'auto',
         cursor: 'pointer',
       }}
@@ -326,7 +326,7 @@ function CornerCapy({
           alignItems: 'flex-end',
           transformOrigin: 'bottom right',
           transition: 'transform 140ms ease-out',
-          transform: hovered ? 'scale(1.04)' : 'scale(1)',
+          transform: hovered ? 'scale(1.02)' : 'scale(1)',
         }}
       >
         <Capybara width={CORNER_W} variant={party ? 'party' : 'sleeping'} />
