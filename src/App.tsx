@@ -789,6 +789,7 @@ function TaskRow({
   const textStyle: React.CSSProperties = {
     flex: 1,
     fontFamily: FONT_SANS,
+    fontWeight: 400,
     fontSize: 18,
     letterSpacing: -0.54,
     color: task?.title ? PANEL.ink : PANEL.placeholder,
@@ -1006,9 +1007,10 @@ function CheckInBand({
 }
 
 const FOLLOW_LERP = 0.04;
+const DEPART_LERP = 0.07;
 const CURSOR_OFFSET_X = -FLY_W / 2;
 const CURSOR_OFFSET_Y = -FLY_H_WALK - 20;
-const DEPART_MS = 1800;
+const DEPART_FALLBACK_MS = 6000;
 
 function FollowingCapy({
   count,
@@ -1073,8 +1075,14 @@ function FollowingCapy({
     if (!popoverOpen && stage === 'frozen') setStage('following');
   }, [popoverOpen, shouldDepart, stage]);
 
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
   useEffect(() => {
     let stopped = false;
+    let arrived = false;
     const tick = () => {
       if (stopped) return;
       const s = stageRef.current;
@@ -1083,8 +1091,9 @@ function FollowingCapy({
         let targetX: number;
         let targetY: number;
         if (s === 'departing') {
-          targetX = window.innerWidth + 200;
-          targetY = p.y + 30;
+          // Walk home to the corner spot, then hand off to the sleeping capy.
+          targetX = window.innerWidth - CORNER_MARGIN - FLY_W + (FLY_W - CORNER_W) / 2;
+          targetY = window.innerHeight - CORNER_MARGIN - FLY_H_WALK;
         } else {
           const c = cursorRef.current;
           targetX = clamp(c.x + CURSOR_OFFSET_X, 8, window.innerWidth - FLY_W - 8);
@@ -1092,11 +1101,21 @@ function FollowingCapy({
         }
         const dx = targetX - p.x;
         const dy = targetY - p.y;
-        const next = { x: p.x + dx * FOLLOW_LERP, y: p.y + dy * FOLLOW_LERP };
+        const lerp = s === 'departing' ? DEPART_LERP : FOLLOW_LERP;
+        const next = { x: p.x + dx * lerp, y: p.y + dy * lerp };
         // Both PNG assets face LEFT natively. Flip when the capybara should
-        // face RIGHT (i.e. cursor is to the right of its midpoint).
-        const cursorIsRight = cursorRef.current.x > next.x + FLY_W / 2;
-        setFlipped(cursorIsRight && s !== 'departing');
+        // face RIGHT: toward the cursor while following, toward the corner
+        // while walking home.
+        if (s === 'departing') {
+          setFlipped(dx > 0);
+          if (!arrived && Math.hypot(dx, dy) < 6) {
+            arrived = true;
+            onCompleteRef.current();
+          }
+        } else {
+          const cursorIsRight = cursorRef.current.x > next.x + FLY_W / 2;
+          setFlipped(cursorIsRight);
+        }
         posRef.current = next;
         setPos(next);
       }
@@ -1109,9 +1128,10 @@ function FollowingCapy({
     };
   }, []);
 
+  // Fallback in case the walk-home gets stuck (e.g. display resize mid-walk).
   useEffect(() => {
     if (stage !== 'departing') return;
-    const t = window.setTimeout(onComplete, DEPART_MS);
+    const t = window.setTimeout(onComplete, DEPART_FALLBACK_MS);
     return () => window.clearTimeout(t);
   }, [stage, onComplete]);
 
