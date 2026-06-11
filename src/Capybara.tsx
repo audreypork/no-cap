@@ -13,8 +13,8 @@ type Props = {
 };
 
 // Intrinsic dimensions of the static capy PNG.
-export const CAPY_SRC_W = 592;
-export const CAPY_SRC_H = 316;
+export const CAPY_SRC_W = 640;
+export const CAPY_SRC_H = 328;
 export const CAPY_ASPECT = CAPY_SRC_W / CAPY_SRC_H;
 
 // Sprite sheets: 4 frames laid out horizontally, per-frame intrinsic
