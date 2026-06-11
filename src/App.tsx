@@ -46,7 +46,8 @@ const PANEL = {
     '0px 1px 1px rgba(70,59,45,0.06), 0px 10px 15px rgba(70,59,45,0.1), 0px 28px 28px rgba(70,59,45,0.08)',
 };
 
-const FEEDBACK_URL = 'https://github.com/audreypork/no-cap/issues';
+// Opens an Instagram DM to Audrey (ig.me is Instagram's direct-message link).
+const FEEDBACK_URL = 'https://ig.me/m/audreycaprianni';
 
 const FONT_PIXEL = "'Silkscreen', monospace";
 const FONT_MONO = "'IBM Plex Mono', monospace";
