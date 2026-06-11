@@ -1,23 +1,33 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
-import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
-import { MakerDeb } from '@electron-forge/maker-deb';
-import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
+// Set CAPY_SIGN=1 to produce a signed + notarized build. Requires:
+//  - a "Developer ID Application" certificate in the login keychain
+//  - notary credentials stored via:
+//    xcrun notarytool store-credentials capy-notarize
+const shouldSign = process.env.CAPY_SIGN === '1';
+
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    name: 'Capy',
+    icon: './icons/icon',
+    appBundleId: 'com.audreypork.capy',
+    appCategoryType: 'public.app-category.productivity',
+    ...(shouldSign
+      ? {
+          osxSign: {},
+          osxNotarize: {
+            keychainProfile: 'capy-notarize',
+          },
+        }
+      : {}),
   },
   rebuildConfig: {},
-  makers: [
-    new MakerSquirrel({}),
-    new MakerZIP({}, ['darwin']),
-    new MakerRpm({}),
-    new MakerDeb({}),
-  ],
+  makers: [new MakerZIP({}, ['darwin'])],
   plugins: [
     new VitePlugin({
       // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
