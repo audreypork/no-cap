@@ -15,6 +15,7 @@ const FLY_W = 160;
 const FLY_H = FLY_W / CAPY_ASPECT;
 const FLY_H_WALK = FLY_W / CAPY_WALK_ASPECT;
 const CORNER_MARGIN = 20;
+const CORNER_LIFT = 8;
 const POPOVER_W = 380;
 const HAPPY_DURATION_MS = 4500;
 
@@ -30,7 +31,7 @@ const COLORS = {
 // Warm cream palette — the popover panel (Figma node 660:6307).
 const PANEL = {
   bg: '#FBF6EF',
-  band: '#F0EAE0',
+  band: '#F4EEE3',
   ink: '#463B2D',
   muted: '#A89C8D',
   placeholder: '#CBC0B1',
@@ -231,7 +232,7 @@ function CornerCapy({
       style={{
         position: 'absolute',
         right: CORNER_MARGIN,
-        bottom: CORNER_MARGIN,
+        bottom: CORNER_MARGIN + CORNER_LIFT,
         width: CORNER_W + 18,
         height: CORNER_H + 18,
         pointerEvents: 'auto',
@@ -250,7 +251,7 @@ function CornerCapy({
           height: CORNER_H,
           transformOrigin: 'bottom right',
           transition: 'transform 140ms ease-out',
-          transform: hovered ? 'scale(1.1)' : 'scale(1)',
+          transform: hovered ? 'scale(1.04)' : 'scale(1)',
         }}
       >
         <Capybara width={CORNER_W} variant="sleeping" />
@@ -304,49 +305,73 @@ function Popover({
   onClose: () => void;
 }) {
   const [view, setView] = useState<'main' | 'settings'>('main');
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [contentHeight, setContentHeight] = useState<number | null>(null);
+
+  // key={view} remounts the content div, so re-observe whenever the view flips.
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setContentHeight(el.offsetHeight));
+    ro.observe(el);
+    setContentHeight(el.offsetHeight);
+    return () => ro.disconnect();
+  }, [view]);
+
   return (
     <ClickableRegion
       style={{
         position: 'absolute',
         right: CORNER_MARGIN,
-        bottom: CORNER_MARGIN + CORNER_H + 2,
+        bottom: CORNER_MARGIN + CORNER_LIFT + CORNER_H + 2,
         width: POPOVER_W,
+        height: contentHeight !== null ? contentHeight + 36 : undefined,
         background: PANEL.bg,
         color: PANEL.ink,
         borderRadius: 16,
         padding: 18,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
+        overflow: 'hidden',
         boxShadow: PANEL.shadow,
         pointerEvents: 'auto',
         animation: 'fadeIn 160ms ease-out',
+        transition: 'height 240ms cubic-bezier(0.4, 0, 0.2, 1)',
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      {view === 'settings' ? (
-        <SettingsView state={state} onClose={() => setView('main')} />
-      ) : (
-        <>
-          <DateHeader
-            viewDateKey={viewDateKey}
-            canGoNext={!isViewingToday}
-            onPrev={onPrev}
-            onNext={onNext}
-            onOpenSettings={() => setView('settings')}
-          />
-          {!isViewingPast ? (
-            <CheckInBand
-              startTime={viewRecord.startTime}
-              onRemind={async () => {
-                await window.capy.bumpTodayCheckinMins(30);
-                onClose();
-              }}
+      <div
+        ref={contentRef}
+        key={view}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          animation: 'fadeIn 200ms ease-out',
+        }}
+      >
+        {view === 'settings' ? (
+          <SettingsView state={state} onClose={() => setView('main')} />
+        ) : (
+          <>
+            <DateHeader
+              viewDateKey={viewDateKey}
+              canGoNext={!isViewingToday}
+              onPrev={onPrev}
+              onNext={onNext}
+              onOpenSettings={() => setView('settings')}
             />
-          ) : null}
-          <TaskList record={viewRecord} readonly={isViewingPast} />
-        </>
-      )}
+            {!isViewingPast ? (
+              <CheckInBand
+                startTime={viewRecord.startTime}
+                onRemind={async () => {
+                  await window.capy.bumpTodayCheckinMins(30);
+                  onClose();
+                }}
+              />
+            ) : null}
+            <TaskList record={viewRecord} readonly={isViewingPast} />
+          </>
+        )}
+      </div>
     </ClickableRegion>
   );
 }
@@ -1093,7 +1118,7 @@ function FollowingCapy({
         if (s === 'departing') {
           // Walk home to the corner spot, then hand off to the sleeping capy.
           targetX = window.innerWidth - CORNER_MARGIN - FLY_W + (FLY_W - CORNER_W) / 2;
-          targetY = window.innerHeight - CORNER_MARGIN - FLY_H_WALK;
+          targetY = window.innerHeight - CORNER_MARGIN - CORNER_LIFT - FLY_H_WALK;
         } else {
           const c = cursorRef.current;
           targetX = clamp(c.x + CURSOR_OFFSET_X, 8, window.innerWidth - FLY_W - 8);
