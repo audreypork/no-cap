@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Capybara, CAPY_ASPECT, CAPY_WALK_ASPECT } from './Capybara';
+import { Capybara, CAPY_ASPECT, CAPY_CHEER_ASPECT, CAPY_WALK_ASPECT } from './Capybara';
 import bedImg from './assets/bed.png';
 import { getFlybyRoast } from './roasts';
 import type { CapyState, DayRecord } from './types';
@@ -1094,7 +1094,7 @@ function CheckInBand({
 const FOLLOW_LERP = 0.04;
 const DEPART_LERP = 0.07;
 const CURSOR_OFFSET_X = -FLY_W / 2;
-const CURSOR_OFFSET_Y = -FLY_H_WALK - 20;
+const CURSOR_GAP_Y = 20;
 const DEPART_FALLBACK_MS = 6000;
 
 function FollowingCapy({
@@ -1112,12 +1112,20 @@ function FollowingCapy({
   onClick: () => void;
   onComplete: () => void;
 }) {
+  // The two sprite sheets have different proportions, so the on-screen
+  // height depends on the active mood.
+  const flyH = mood === 'nice' ? FLY_W / CAPY_CHEER_ASPECT : FLY_H_WALK;
+  const flyHRef = useRef(flyH);
+  useEffect(() => {
+    flyHRef.current = flyH;
+  }, [flyH]);
+
   const [stage, setStage] = useState<'following' | 'frozen' | 'departing'>(
     'following',
   );
   const [pos, setPos] = useState<{ x: number; y: number }>(() => ({
     x: -FLY_W - 40,
-    y: window.innerHeight / 2 - FLY_H_WALK / 2,
+    y: window.innerHeight / 2 - flyH / 2,
   }));
   const [flipped, setFlipped] = useState(false);
   const cursorRef = useRef<{ x: number; y: number }>({
@@ -1175,22 +1183,22 @@ function FollowingCapy({
         const p = posRef.current;
         let targetX: number;
         let targetY: number;
+        const h = flyHRef.current;
         if (s === 'departing') {
           // Walk home to the corner spot, then hand off to the sleeping capy.
           targetX = window.innerWidth - CORNER_MARGIN - FLY_W + (FLY_W - CORNER_W) / 2;
-          targetY = window.innerHeight - CORNER_MARGIN - CORNER_LIFT - FLY_H_WALK;
+          targetY = window.innerHeight - CORNER_MARGIN - CORNER_LIFT - h;
         } else {
           const c = cursorRef.current;
           targetX = clamp(c.x + CURSOR_OFFSET_X, 8, window.innerWidth - FLY_W - 8);
-          targetY = clamp(c.y + CURSOR_OFFSET_Y, 80, window.innerHeight - FLY_H_WALK - 16);
+          targetY = clamp(c.y - h - CURSOR_GAP_Y, 80, window.innerHeight - h - 16);
         }
         const dx = targetX - p.x;
         const dy = targetY - p.y;
         const lerp = s === 'departing' ? DEPART_LERP : FOLLOW_LERP;
         const next = { x: p.x + dx * lerp, y: p.y + dy * lerp };
-        // Both PNG assets face LEFT natively. Flip when the capybara should
-        // face RIGHT: toward the cursor while following, toward the corner
-        // while walking home.
+        // flipped means "face RIGHT": toward the cursor while following,
+        // toward the corner while walking home.
         if (s === 'departing') {
           setFlipped(dx > 0);
           if (!arrived && Math.hypot(dx, dy) < 6) {
@@ -1241,7 +1249,7 @@ function FollowingCapy({
         left: pos.x,
         top: pos.y,
         width: FLY_W,
-        height: FLY_H_WALK,
+        height: flyH,
         pointerEvents: 'none',
       }}
     >
@@ -1249,7 +1257,7 @@ function FollowingCapy({
         style={{
           position: 'relative',
           width: FLY_W,
-          height: FLY_H_WALK,
+          height: flyH,
           cursor: stage === 'departing' ? 'default' : 'pointer',
           pointerEvents: 'auto',
         }}
@@ -1263,7 +1271,11 @@ function FollowingCapy({
             transformOrigin: 'center bottom',
           }}
         >
-          <Capybara width={FLY_W} variant="walking" flipX={flipped} />
+          <Capybara
+            width={FLY_W}
+            variant={mood === 'nice' ? 'cheering' : 'walking'}
+            flipX={flipped}
+          />
         </div>
         {stage !== 'departing' ? <SpeechBubble text={text} /> : null}
       </ClickableRegion>

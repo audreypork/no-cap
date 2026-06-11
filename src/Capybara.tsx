@@ -1,16 +1,14 @@
 import React from 'react';
 import capyImg from './assets/capy.png';
 import capyWalkImg from './assets/capy-walk.png';
+import capyCheerImg from './assets/capy-cheer.png';
 
-type Variant = 'sleeping' | 'awake' | 'happy' | 'walking';
+type Variant = 'sleeping' | 'awake' | 'happy' | 'walking' | 'cheering';
 
 type Props = {
   width: number;
   variant?: Variant;
-  /**
-   * Horizontal flip. Both source PNGs face LEFT natively, so
-   * flipX=true makes the capybara face RIGHT.
-   */
+  /** flipX=true means the capybara should face RIGHT. */
   flipX?: boolean;
 };
 
@@ -19,17 +17,21 @@ export const CAPY_SRC_W = 592;
 export const CAPY_SRC_H = 316;
 export const CAPY_ASPECT = CAPY_SRC_W / CAPY_SRC_H;
 
-// Walking sprite sheet: 4 frames laid out horizontally.
-// Per-frame intrinsic size from the cropped strip.
-const WALK_FRAMES = 4;
-const WALK_FRAME_W = 360;
-const WALK_FRAME_H = 261;
-export const CAPY_WALK_ASPECT = WALK_FRAME_W / WALK_FRAME_H;
+// Sprite sheets: 4 frames laid out horizontally, per-frame intrinsic
+// size from the cropped strips. facesRight notes the native direction
+// of the art so flipX can be normalized.
+const SHEETS = {
+  walking: { img: capyWalkImg, frames: 4, w: 360, h: 261, facesRight: false },
+  cheering: { img: capyCheerImg, frames: 4, w: 400, h: 308, facesRight: true },
+} as const;
+
+export const CAPY_WALK_ASPECT = SHEETS.walking.w / SHEETS.walking.h;
+export const CAPY_CHEER_ASPECT = SHEETS.cheering.w / SHEETS.cheering.h;
 const WALK_DURATION_MS = 480;
 
 export function Capybara({ width, variant = 'awake', flipX = false }: Props) {
-  if (variant === 'walking') {
-    return <WalkingCapybara width={width} flipX={flipX} />;
+  if (variant === 'walking' || variant === 'cheering') {
+    return <SpriteCapybara width={width} faceRight={flipX} sheet={SHEETS[variant]} />;
   }
   const height = width / CAPY_ASPECT;
   return (
@@ -50,21 +52,30 @@ export function Capybara({ width, variant = 'awake', flipX = false }: Props) {
   );
 }
 
-function WalkingCapybara({ width, flipX }: { width: number; flipX: boolean }) {
-  const height = width / CAPY_WALK_ASPECT;
-  const stripWidth = width * WALK_FRAMES;
+function SpriteCapybara({
+  width,
+  faceRight,
+  sheet,
+}: {
+  width: number;
+  faceRight: boolean;
+  sheet: (typeof SHEETS)[keyof typeof SHEETS];
+}) {
+  const height = width / (sheet.w / sheet.h);
+  const stripWidth = width * sheet.frames;
+  const mirrored = sheet.facesRight ? !faceRight : faceRight;
   return (
     <div
       style={{
         width,
         height,
         overflow: 'hidden',
-        transform: flipX ? 'scaleX(-1)' : undefined,
+        transform: mirrored ? 'scaleX(-1)' : undefined,
         filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))',
       }}
     >
       <img
-        src={capyWalkImg}
+        src={sheet.img}
         width={stripWidth}
         height={height}
         alt="capybara walking"
@@ -73,7 +84,7 @@ function WalkingCapybara({ width, flipX }: { width: number; flipX: boolean }) {
           display: 'block',
           userSelect: 'none',
           pointerEvents: 'none',
-          animation: `walkCycle ${WALK_DURATION_MS}ms steps(${WALK_FRAMES}) infinite`,
+          animation: `walkCycle ${WALK_DURATION_MS}ms steps(${sheet.frames}) infinite`,
         }}
       />
     </div>
