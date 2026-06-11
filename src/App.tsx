@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Capybara, CAPY_ASPECT, CAPY_WALK_ASPECT } from './Capybara';
 import bedImg from './assets/bed.png';
+import { getFlybyRoast } from './roasts';
 import type { CapyState, DayRecord } from './types';
 import {
   addDaysKey,
@@ -1219,10 +1220,18 @@ function FollowingCapy({
     return () => window.clearTimeout(t);
   }, [stage, onComplete]);
 
+  const [roast, setRoast] = useState(() => getFlybyRoast());
+
+  useEffect(() => {
+    if (mood !== 'naughty') return;
+    const id = window.setInterval(() => setRoast(getFlybyRoast()), 3000);
+    return () => window.clearInterval(id);
+  }, [mood]);
+
   const plural = count === 1 ? '' : 's';
   const text =
     mood === 'naughty'
-      ? `lazy ass bitch you haven't done your ${count} task${plural} yet`
+      ? roast
       : `you haven't done your ${count} task${plural} yet!!`;
 
   return (
@@ -1281,10 +1290,8 @@ function SpeechBubble({ text }: { text: string }) {
         fontWeight: 500,
         padding: '10px 16px',
         borderRadius: 16,
-        whiteSpace: 'nowrap',
-        maxWidth: 480,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
+        width: 'max-content',
+        maxWidth: 340,
         boxShadow: '0 6px 22px rgba(0,0,0,0.35)',
         textAlign: 'center',
       }}
