@@ -21,7 +21,7 @@ const FLY_H = FLY_W / CAPY_ASPECT;
 const FLY_H_WALK = FLY_W / CAPY_WALK_ASPECT;
 const CORNER_MARGIN = 20;
 const CORNER_LIFT = 8;
-const POPOVER_W = 380;
+const POPOVER_W = 320;
 const HAPPY_DURATION_MS = 4500;
 
 // Dark palette — speech bubble + badge.
@@ -1003,10 +1003,10 @@ function CheckInBand({ startTime }: { startTime: string }) {
       style={{
         background: PANEL.band,
         borderRadius: 11,
-        padding: '14px 16px',
+        padding: '12px 16px',
         display: 'flex',
-        flexDirection: 'column',
-        gap: 6,
+        alignItems: 'center',
+        justifyContent: 'space-between',
       }}
     >
       <div
@@ -1022,14 +1022,7 @@ function CheckInBand({ startTime }: { startTime: string }) {
       >
         {flash ? 'Must be in the future' : 'Check in'}
       </div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        {editing ? (
+      {editing ? (
           <input
             autoFocus
             type="time"
@@ -1071,7 +1064,6 @@ function CheckInBand({ startTime }: { startTime: string }) {
             {format12h(startTime)}
           </div>
         )}
-      </div>
     </div>
   );
 }
