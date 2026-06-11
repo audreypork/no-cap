@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Capy</title>
+<title>capy</title>
 <meta name="description" content="A capybara that naps in the corner of your Mac — until you skip your tasks." />
 <link rel="icon" type="image/png" href="icon.png" />
 <meta property="og:title" content="Capy — 3 tasks. 1 capybara." />
@@ -77,6 +77,11 @@
   }
   .dl-btn:hover { transform: translateY(-1px); }
   .dl-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .dl-count {
+    margin-top: 14px;
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.6px;
+    color: var(--label);
+  }
 
   /* ===== floating to-do panel, centered ===== */
   .float-panel {
@@ -179,6 +184,7 @@
     </svg>
     Download for Mac
   </a>
+  <p class="dl-count"><span id="dl-num">3</span> downloads</p>
 </main>
 
 <!-- to-do panel, centered, matching the latest modal -->
@@ -346,6 +352,23 @@
     </g>
   </svg>
 </div>
+
+<script>
+  // Live download count from GitHub Releases, calibrated so the
+  // counter started at 3. Falls back to the static "3" on any error.
+  (async () => {
+    const BASE_OFFSET = 2;
+    try {
+      const res = await fetch('https://api.github.com/repos/audreypork/no-cap/releases');
+      if (!res.ok) return;
+      const releases = await res.json();
+      const total = releases
+        .flatMap((r) => r.assets || [])
+        .reduce((sum, a) => sum + (a.download_count || 0), 0);
+      document.getElementById('dl-num').textContent = (total + BASE_OFFSET).toLocaleString();
+    } catch (e) { /* keep fallback */ }
+  })();
+</script>
 
 </body>
 </html>
