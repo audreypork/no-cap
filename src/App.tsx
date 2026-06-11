@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Capybara, CAPY_ASPECT, CAPY_WALK_ASPECT } from './Capybara';
+import bedImg from './assets/bed.png';
 import type { CapyState, DayRecord } from './types';
 import {
   addDaysKey,
@@ -11,6 +12,9 @@ import {
 
 const CORNER_W = 130;
 const CORNER_H = CORNER_W / CAPY_ASPECT;
+const BED_ASPECT = 640 / 377;
+const BED_W = 140;
+const BED_H = BED_W / BED_ASPECT;
 const FLY_W = 160;
 const FLY_H = FLY_W / CAPY_ASPECT;
 const FLY_H_WALK = FLY_W / CAPY_WALK_ASPECT;
@@ -182,6 +186,14 @@ export function App() {
 
       {happy && !followActive ? <HappyCapy /> : null}
 
+      {followActive ? (
+        <CornerBed
+          onClick={async () => {
+            await window.capy.bumpTodayCheckinMins(30);
+          }}
+        />
+      ) : null}
+
       {!followActive && !happy ? (
         <CornerCapy
           undoneCount={undoneCount}
@@ -210,6 +222,53 @@ export function App() {
         />
       ) : null}
     </div>
+  );
+}
+
+function CornerBed({ onClick }: { onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <ClickableRegion
+      style={{
+        position: 'absolute',
+        right: CORNER_MARGIN,
+        bottom: CORNER_MARGIN + CORNER_LIFT,
+        width: BED_W + 18,
+        height: BED_H + 18,
+        pointerEvents: 'auto',
+        cursor: 'pointer',
+      }}
+      onClick={onClick}
+    >
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          position: 'absolute',
+          right: 0,
+          bottom: 0,
+          width: BED_W,
+          height: BED_H,
+          transformOrigin: 'bottom right',
+          transition: 'transform 140ms ease-out',
+          transform: hovered ? 'scale(1.04)' : 'scale(1)',
+        }}
+      >
+        <img
+          src={bedImg}
+          width={BED_W}
+          height={BED_H}
+          alt="capy's bed — click to call him back"
+          draggable={false}
+          style={{
+            display: 'block',
+            userSelect: 'none',
+            pointerEvents: 'none',
+            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))',
+          }}
+        />
+      </div>
+    </ClickableRegion>
   );
 }
 
