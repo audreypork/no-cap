@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Capybara, CAPY_ASPECT, CAPY_CHEER_ASPECT, CAPY_WALK_ASPECT } from './Capybara';
 import bedImg from './assets/bed.png';
 import { getFlybyRoast } from './roasts';
+import { getFlybyCheer } from './cheers';
 import type { CapyState, DayRecord } from './types';
 import {
   addDaysKey,
@@ -1219,19 +1220,15 @@ function FollowingCapy({
     return () => window.clearTimeout(t);
   }, [stage, onComplete]);
 
-  const [roast, setRoast] = useState(() => getFlybyRoast());
+  const pickLine = mood === 'naughty' ? getFlybyRoast : getFlybyCheer;
+  const [text, setText] = useState(() => pickLine());
 
   useEffect(() => {
-    if (mood !== 'naughty') return;
-    const id = window.setInterval(() => setRoast(getFlybyRoast()), 2000);
+    const pick = mood === 'naughty' ? getFlybyRoast : getFlybyCheer;
+    setText(pick());
+    const id = window.setInterval(() => setText(pick()), 2000);
     return () => window.clearInterval(id);
   }, [mood]);
-
-  const plural = count === 1 ? '' : 's';
-  const text =
-    mood === 'naughty'
-      ? roast
-      : `you haven't done your ${count} task${plural} yet!!`;
 
   return (
     <div
