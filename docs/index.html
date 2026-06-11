@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Capy — 3 tasks. 1 capybara</title>
+<meta name="description" content="A capybara that naps in the corner of your Mac — until you skip your tasks." />
+<link rel="icon" type="image/png" href="icon.png" />
+<meta property="og:title" content="Capy — 3 tasks. 1 capybara." />
+<meta property="og:description" content="A capybara that naps in the corner of your Mac — until you skip your tasks. How politely he reminds you is up to you." />
+<meta property="og:image" content="https://getcapy.lol/icon.png" />
+<meta property="og:url" content="https://getcapy.lol" />
+<meta name="twitter:card" content="summary" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+15&family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page: #ECE4D7;
+    --panel: #FBF6EF;
+    --ink: #463B2D;
+    --outline: #4A3526;
+    --label: #A89C8D;
+    --shadow:
+      0px 1px 1px rgba(70, 59, 45, 0.06),
+      0px 10px 15px rgba(70, 59, 45, 0.10),
+      0px 28px 28px rgba(70, 59, 45, 0.08);
+    --pixel: "Jersey 15", monospace;
+    --pixelcaps: "Silkscreen", monospace;
+    --mono: "IBM Plex Mono", monospace;
+    --sans: "DM Sans", -apple-system, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 100vw; height: 100vh; overflow: hidden;
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--ink); color: var(--panel); }
+
+  .logo {
+    position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+    font-family: var(--pixel); font-size: 30px; letter-spacing: 1px;
+    color: var(--ink); text-decoration: none; z-index: 10;
+  }
+
+  .hero {
+    height: 100vh; width: 100vw;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 24px 24px 26vh;
+    position: relative; z-index: 2;
+  }
+  h1 {
+    font-family: var(--pixel); font-weight: 400;
+    font-size: clamp(64px, 11vw, 118px);
+    letter-spacing: 0.5px; line-height: 0.92;
+    margin-bottom: 26px;
+  }
+  .sub {
+    font-size: 17px; line-height: 1.6; letter-spacing: -0.2px;
+    opacity: 0.75; max-width: 46ch;
+    margin-bottom: 38px;
+  }
+  .dl-btn {
+    display: inline-flex; align-items: center; gap: 11px;
+    background: var(--ink); color: var(--panel);
+    font-family: var(--sans); font-weight: 600; font-size: 16px;
+    letter-spacing: -0.2px;
+    padding: 15px 26px; border-radius: 13px;
+    text-decoration: none; cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform .15s ease;
+  }
+  .dl-btn:hover { transform: translateY(-1px); }
+  .dl-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .req-note {
+    margin-top: 14px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.4px;
+    color: var(--label);
+  }
+
+  /* ===== floating to-do panel, centered ===== */
+  .float-panel {
+    position: fixed; left: 50%; bottom: 2vh;
+    z-index: 3;
+    animation: raft 7s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes raft {
+    0%, 100% { transform: translateX(-50%) rotate(-1deg) translateY(0); }
+    50% { transform: translateX(-50%) rotate(-0.4deg) translateY(-6px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .float-panel { animation: none; transform: translateX(-50%) rotate(-1deg); }
+  }
+  .panel {
+    width: 312px;
+    background: var(--panel);
+    border-radius: 18px;
+    padding: 18px 18px 16px;
+    display: flex; flex-direction: column; gap: 14px;
+    box-shadow: var(--shadow);
+    text-align: left;
+  }
+  .head-row { display: flex; align-items: center; }
+  .date {
+    font-family: var(--pixelcaps); font-weight: 400;
+    font-size: 16px; letter-spacing: 0.5px;
+    margin-left: 10px;
+  }
+  .chev-next { margin-left: 12px; }
+  .head-spacer { flex: 1; }
+  .band {
+    background: #F0EAE0; border-radius: 12px;
+    padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .band-label {
+    font-family: var(--mono); font-weight: 500;
+    font-size: 11.5px; letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--label);
+  }
+  .time-val {
+    font-family: var(--mono); font-weight: 500;
+    font-size: 17px; letter-spacing: -0.2px;
+  }
+  .priority { display: flex; align-items: center; gap: 10px; padding: 7px 0 7px 8px; }
+  .check {
+    width: 15px; height: 15px; border-radius: 3.5px;
+    border: 1px solid #B5A893; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .check.done { background: var(--ink); border-color: var(--ink); }
+  .p-text { font-size: 16px; letter-spacing: -0.45px; line-height: 21px; }
+  .p-text.done { color: var(--label); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+  .raft-ripples { display: block; margin: 8px auto 0; }
+
+  @media (max-height: 740px) {
+    .float-panel { transform: translateX(-50%) scale(0.88); transform-origin: bottom center; }
+  }
+  @media (max-width: 720px) { .float-panel { display: none; } }
+
+  /* ===== pond scene ===== */
+  .pond {
+    position: fixed; bottom: 0; left: 0;
+    width: 100vw; height: 38vh; min-height: 240px;
+    z-index: 1; pointer-events: none;
+  }
+  .pond svg { width: 100%; height: 100%; display: block; }
+  .steam { animation: drift 6s ease-in-out infinite; }
+  .steam.s2 { animation-delay: -2s; }
+  .steam.s3 { animation-delay: -4s; }
+  @keyframes drift {
+    0%, 100% { transform: translateY(0); opacity: .5; }
+    50% { transform: translateY(-10px); opacity: .9; }
+  }
+  .yuzu-bob { animation: bob 3.4s ease-in-out infinite; }
+  .yuzu-bob.y2 { animation-delay: -1.2s; }
+  .yuzu-bob.y3 { animation-delay: -2.3s; }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-5px) rotate(3deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .steam, .yuzu-bob { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<a class="logo" href="#">CAPY</a>
+
+<main class="hero">
+  <h1>3 tasks.<br>1 capybara.</h1>
+  <p class="sub">Capy naps in the bottom corner quietly if you get all your work done. How politely, is up to you.</p>
+  <a class="dl-btn" href="https://github.com/audreypork/no-cap/releases/latest/download/Capy.zip">
+    <svg width="18" height="21" viewBox="0 0 18 21" fill="currentColor" aria-hidden="true">
+      <path d="M14.55 11.06c-.02-2.41 1.97-3.57 2.06-3.63-1.12-1.64-2.87-1.87-3.49-1.89-1.49-.15-2.9.87-3.65.87-.75 0-1.92-.85-3.15-.83-1.62.02-3.12.94-3.95 2.39-1.69 2.92-.43 7.25 1.21 9.62.8 1.16 1.76 2.46 3.01 2.41 1.21-.05 1.66-.78 3.12-.78 1.46 0 1.87.78 3.15.76 1.3-.02 2.12-1.18 2.91-2.35.92-1.34 1.3-2.64 1.32-2.71-.03-.01-2.52-.97-2.54-3.86z"/>
+      <path d="M12.15 3.99c.67-.81 1.12-1.93.99-3.05-.96.04-2.13.64-2.82 1.45-.62.72-1.16 1.86-1.02 2.96 1.08.08 2.18-.55 2.85-1.36z"/>
+    </svg>
+    Download for Mac
+  </a>
+  <p class="req-note">Apple Silicon (M1+) · free · signed &amp; notarized</p>
+</main>
+
+<!-- to-do panel, centered, matching the latest modal -->
+<div class="float-panel" aria-hidden="true">
+  <div class="panel">
+    <div class="head-row">
+      <svg width="15" height="15" viewBox="0 0 17 17" fill="none"><path d="M10.625 12.75L6.375 8.5L10.625 4.25" stroke="#B5A893" stroke-width="1.56" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="date">Thu 11 June</span>
+      <svg class="chev-next" width="15" height="15" viewBox="0 0 17 17" fill="none"><path d="M6.375 12.75L10.625 8.5L6.375 4.25" stroke="#B5A893" stroke-width="1.56" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="head-spacer"></span>
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3.33 5h8.34M15 5h1.67M13.33 6.67a1.67 1.67 0 100-3.34 1.67 1.67 0 000 3.34zM3.33 10h3.34M10 10h6.67M8.33 11.67a1.67 1.67 0 100-3.34 1.67 1.67 0 000 3.34zM3.33 15h8.34M15 15h1.67M13.33 16.67a1.67 1.67 0 100-3.34 1.67 1.67 0 000 3.34z" stroke="#B5A893" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="band">
+      <span class="band-label">Check in</span>
+      <span class="time-val">10:08 pm</span>
+    </div>
+    <div>
+      <div class="priority">
+        <span class="check done"><svg width="9" height="9" viewBox="0 0 8 8" fill="none"><path d="M1.5 4.2L3.2 5.9L6.5 2.2" stroke="#FBF6EF" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="p-text done">hf building capy</span>
+      </div>
+      <div class="priority">
+        <span class="check"></span>
+        <span class="p-text">film capy</span>
+      </div>
+      <div class="priority">
+        <span class="check done"><svg width="9" height="9" viewBox="0 0 8 8" fill="none"><path d="M1.5 4.2L3.2 5.9L6.5 2.2" stroke="#FBF6EF" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="p-text done">edit capy</span>
+      </div>
+    </div>
+  </div>
+  <svg class="raft-ripples" width="220" height="16" viewBox="0 0 220 16" fill="none">
+    <path d="M10 9 Q 40 2 70 9" stroke="#D9C5A6" stroke-width="5" stroke-linecap="round"/>
+    <path d="M120 12 Q 155 5 190 12" stroke="#D9C5A6" stroke-width="5" stroke-linecap="round"/>
+  </svg>
+</div>
+
+<!-- onsen pond -->
+<div class="pond" aria-hidden="true">
+  <svg viewBox="0 0 1440 380" preserveAspectRatio="xMidYMax slice" fill="none">
+
+    <!-- far bank -->
+    <path d="M-20 240 Q 240 196 520 224 Q 820 252 1110 214 Q 1300 192 1460 226 L 1460 400 L -20 400 Z" fill="#E2D6C0"/>
+
+    <!-- water -->
+    <path d="M-20 268 Q 200 236 470 254 Q 760 274 1030 248 Q 1260 228 1460 258 L 1460 400 L -20 400 Z" fill="#F7EBDB" stroke="#4A3526" stroke-width="6"/>
+
+    <!-- soaking capy, right side, yuzu on head -->
+    <g>
+      <!-- body: smooth round loaf -->
+      <path d="M 912 300 L 912 234 Q 912 172 964 154 Q 1006 140 1050 148 Q 1100 156 1130 184 Q 1160 212 1163 252 L 1165 300 Z"
+            fill="#E2AE74" stroke="#4A3526" stroke-width="8" stroke-linejoin="round"/>
+      <!-- ear: c-curl with dark inner -->
+      <path d="M 1042 150 Q 1043 128 1062 129 Q 1079 131 1075 152 Q 1059 143 1042 150 Z"
+            fill="#D29A5F" stroke="#4A3526" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M 1052 144 Q 1058 136 1068 138" stroke="#4A3526" stroke-width="5" stroke-linecap="round"/>
+      <!-- muzzle: big soft blob, protrudes front-low -->
+      <path d="M 938 206 Q 986 202 996 238 Q 1002 268 970 276 Q 920 284 904 258 Q 892 236 906 220 Q 918 208 938 206 Z"
+            fill="#A07850" stroke="#4A3526" stroke-width="8" stroke-linejoin="round"/>
+      <!-- nose + mouth curl -->
+      <path d="M 920 232 Q 928 228 934 233" stroke="#4A3526" stroke-width="6" stroke-linecap="round"/>
+      <path d="M 927 233 L 927 244 Q 927 251 934 252" stroke="#4A3526" stroke-width="5" stroke-linecap="round"/>
+      <!-- closed eye with lash flick -->
+      <path d="M 1000 200 Q 1011 213 1024 203 Q 1028 199 1027 194" stroke="#4A3526" stroke-width="7" stroke-linecap="round"/>
+      <!-- blush -->
+      <ellipse cx="1000" cy="230" rx="12" ry="7.5" fill="#F0A077" opacity="0.85"/>
+      <!-- fur dashes -->
+      <g stroke="#C68F58" stroke-width="5" stroke-linecap="round">
+        <path d="M 1066 176 Q 1072 172 1078 175"/>
+        <path d="M 1104 198 Q 1110 194 1116 197"/>
+        <path d="M 1134 234 Q 1140 230 1146 233"/>
+      </g>
+      <!-- yuzu on head: part of the capy illustration, sits flush on the crown -->
+      <g>
+        <circle cx="1006" cy="132" r="18" fill="#F2A93B" stroke="#4A3526" stroke-width="7"/>
+        <path d="M 997 126 Q 1003 122 1009 126" stroke="#D98A2B" stroke-width="4" stroke-linecap="round"/>
+        <path d="M 1006 115 Q 1010 106 1019 104" stroke="#4A3526" stroke-width="6" stroke-linecap="round"/>
+        <ellipse cx="1026" cy="101" rx="9" ry="5" fill="#8FB04D" stroke="#4A3526" stroke-width="5" transform="rotate(-12 1026 101)"/>
+      </g>
+    </g>
+    <!-- waterline overlay -->
+    <path d="M -20 280 L 1460 280 L 1460 400 L -20 400 Z" fill="#F7EBDB"/>
+    <!-- soak ripples around capy -->
+    <g stroke="#D9C5A6" stroke-width="5" stroke-linecap="round">
+      <path d="M 856 290 Q 888 282 920 290"/>
+      <path d="M 1172 294 Q 1204 286 1236 294"/>
+      <path d="M 900 306 Q 926 300 952 306"/>
+    </g>
+
+    <!-- ripple arcs -->
+    <g stroke="#D9C5A6" stroke-width="5" stroke-linecap="round">
+      <path d="M180 318 Q 215 308 250 318"/>
+      <path d="M340 348 Q 372 339 404 348"/>
+      <path d="M620 326 Q 656 316 692 326"/>
+      <path d="M905 350 Q 940 341 975 350"/>
+      <path d="M1290 345 Q 1322 336 1354 345"/>
+      <path d="M70 355 Q 100 347 130 355"/>
+    </g>
+
+    <!-- steam wisps -->
+    <g stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" opacity="0.75">
+      <path class="steam" d="M300 268 Q 290 244 302 222 Q 314 200 304 178"/>
+      <path class="steam s2" d="M620 276 Q 610 252 622 230 Q 634 208 624 186"/>
+      <path class="steam s3" d="M1196 264 Q 1186 240 1198 218 Q 1210 196 1200 174"/>
+    </g>
+
+    <!-- yuzu floating -->
+    <g class="yuzu-bob">
+      <circle cx="480" cy="306" r="22" fill="#F0A848" stroke="#4A3526" stroke-width="6"/>
+      <path d="M480 286 Q 486 276 496 274" stroke="#4A3526" stroke-width="6" stroke-linecap="round"/>
+      <ellipse cx="500" cy="271" rx="9" ry="5" fill="#9DAA6B" stroke="#4A3526" stroke-width="5" transform="rotate(-18 500 271)"/>
+      <path d="M471 300 Q 476 296 481 299" stroke="#D98A2B" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <g class="yuzu-bob y2">
+      <circle cx="840" cy="318" r="17" fill="#F0A848" stroke="#4A3526" stroke-width="6"/>
+      <path d="M833 312 Q 837 309 841 311" stroke="#D98A2B" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <g class="yuzu-bob y3">
+      <circle cx="276" cy="300" r="20" fill="#F0A848" stroke="#4A3526" stroke-width="6"/>
+      <path d="M276 282 Q 281 273 290 271" stroke="#4A3526" stroke-width="6" stroke-linecap="round"/>
+      <ellipse cx="294" cy="268" rx="8" ry="5" fill="#9DAA6B" stroke="#4A3526" stroke-width="5" transform="rotate(-15 294 268)"/>
+    </g>
+
+    <!-- stones, left cluster -->
+    <g>
+      <ellipse cx="120" cy="282" rx="58" ry="34" fill="#CBBBA0" stroke="#4A3526" stroke-width="6"/>
+      <ellipse cx="208" cy="296" rx="40" ry="25" fill="#BFAE92" stroke="#4A3526" stroke-width="6"/>
+      <path d="M100 272 Q 112 266 124 270" stroke="#B5A287" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <!-- stones, right cluster -->
+    <g>
+      <ellipse cx="1330" cy="290" rx="62" ry="36" fill="#CBBBA0" stroke="#4A3526" stroke-width="6"/>
+      <ellipse cx="1248" cy="304" rx="38" ry="23" fill="#BFAE92" stroke="#4A3526" stroke-width="6"/>
+      <path d="M1314 278 Q 1328 272 1342 277" stroke="#B5A287" stroke-width="5" stroke-linecap="round"/>
+    </g>
+
+    <!-- cattails left -->
+    <g stroke="#4A3526" stroke-linecap="round">
+      <path d="M70 268 Q 64 200 74 150" stroke-width="6"/>
+      <rect x="62" y="118" width="22" height="46" rx="11" fill="#A9764B" stroke-width="6"/>
+      <path d="M104 270 Q 102 218 96 182" stroke-width="6"/>
+      <rect x="86" y="150" width="19" height="40" rx="9.5" fill="#B98756" stroke-width="6"/>
+      <path d="M40 272 Q 48 230 64 206" stroke-width="6" fill="none"/>
+    </g>
+    <!-- cattails right -->
+    <g stroke="#4A3526" stroke-linecap="round">
+      <path d="M1392 262 Q 1398 196 1388 148" stroke-width="6"/>
+      <rect x="1378" y="116" width="22" height="46" rx="11" fill="#A9764B" stroke-width="6"/>
+      <path d="M1358 268 Q 1360 220 1366 186" stroke-width="6"/>
+      <rect x="1356" y="154" width="19" height="40" rx="9.5" fill="#B98756" stroke-width="6"/>
+    </g>
+
+    <!-- grass tufts -->
+    <g stroke="#9DAA6B" stroke-width="6" stroke-linecap="round">
+      <path d="M390 252 Q 388 240 392 232 M402 252 Q 404 240 400 230 M414 253 Q 416 244 422 238"/>
+      <path d="M1218 250 Q 1216 240 1220 232 M1230 250 Q 1232 240 1228 230"/>
+      <path d="M540 252 Q 538 242 542 234 M552 252 Q 554 242 550 232"/>
+    </g>
+
+    <!-- sparkles -->
+    <g stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.9">
+      <path d="M560 296 L 572 296 M566 290 L 566 302"/>
+      <path d="M1150 336 L 1160 336 M1155 331 L 1155 341"/>
+      <path d="M240 336 L 248 336"/>
+    </g>
+  </svg>
+</div>
+
+</body>
+</html>
