@@ -214,9 +214,6 @@ export function App() {
 
       {!followActive && !happy ? (
         <CornerCapy
-          undoneCount={undoneCount}
-          tasksCount={todayRecord.tasks.length}
-          allDone={allDone}
           onClick={() => {
             setViewDateKey(today);
             setPopoverOpen((o) => !o);
@@ -290,19 +287,7 @@ function CornerBed({ onClick }: { onClick: () => void }) {
   );
 }
 
-function CornerCapy({
-  undoneCount,
-  tasksCount,
-  allDone,
-  onClick,
-}: {
-  undoneCount: number;
-  tasksCount: number;
-  allDone: boolean;
-  onClick: () => void;
-}) {
-  const showBadge = tasksCount > 0;
-  const badgeText = allDone ? '✓' : String(undoneCount);
+function CornerCapy({ onClick }: { onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
     <ClickableRegion
@@ -333,29 +318,6 @@ function CornerCapy({
       >
         <Capybara width={CORNER_W} variant="sleeping" />
       </div>
-      {showBadge ? (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            background: COLORS.bg,
-            color: COLORS.text,
-            fontSize: 13,
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: `1px solid ${COLORS.border}`,
-            boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
-          }}
-        >
-          {badgeText}
-        </div>
-      ) : null}
     </ClickableRegion>
   );
 }
