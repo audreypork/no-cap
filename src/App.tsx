@@ -23,7 +23,6 @@ const FLY_H_WALK = FLY_W / CAPY_WALK_ASPECT;
 const CORNER_MARGIN = 20;
 const CORNER_LIFT = 8;
 const POPOVER_W = 320;
-const HAPPY_DURATION_MS = 4500;
 
 // Dark palette — speech bubble + badge.
 const COLORS = {
@@ -92,9 +91,7 @@ export function App() {
   const [viewDateKey, setViewDateKey] = useState<string>(localDateKey());
   const [followActive, setFollowActive] = useState(false);
   const [followDeparting, setFollowDeparting] = useState(false);
-  const [happy, setHappy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const prevAllDoneRef = useRef(false);
 
   useEffect(() => {
     window.capy.getState().then(setState);
@@ -134,24 +131,13 @@ export function App() {
   const undoneCount = todayRecord.tasks.filter((t) => !t.done).length;
   const allDone = todayRecord.tasks.length === 3 && undoneCount === 0;
 
-  useEffect(() => {
-    if (!state) return;
-    const prev = prevAllDoneRef.current;
-    prevAllDoneRef.current = allDone;
-    if (!prev && allDone) {
-      setHappy(true);
-      window.setTimeout(() => setHappy(false), HAPPY_DURATION_MS);
-    }
-  }, [allDone, state]);
-
   const shouldFollow = useMemo(() => {
     if (!state) return false;
-    if (happy) return false;
     if (undoneCount === 0) return false;
     const pause = state.store.pause;
     if (pause && pause.until > now) return false;
     return isAfterStartTimeToday(todayRecord.startTime, new Date(now));
-  }, [state, happy, undoneCount, todayRecord.startTime, now]);
+  }, [state, undoneCount, todayRecord.startTime, now]);
 
   useEffect(() => {
     if (shouldFollow) {
@@ -203,8 +189,6 @@ export function App() {
         />
       ) : null}
 
-      {happy && !followActive ? <HappyCapy /> : null}
-
       {followActive ? (
         <CornerBed
           onClick={async () => {
@@ -213,7 +197,7 @@ export function App() {
         />
       ) : null}
 
-      {!followActive && !happy ? (
+      {!followActive ? (
         <CornerCapy
           hat={allDone}
           onClick={() => {
@@ -1286,76 +1270,3 @@ function SpeechBubble({ text }: { text: string }) {
   );
 }
 
-function HappyCapy() {
-  const winW = window.innerWidth;
-  const winH = window.innerHeight;
-  const centerX = winW / 2 - FLY_W / 2;
-  const centerY = winH / 2 - FLY_H / 2;
-  const cornerX = winW - CORNER_W - CORNER_MARGIN;
-  const cornerY = winH - CORNER_H - CORNER_MARGIN;
-  const dx = cornerX - centerX;
-  const dy = cornerY - centerY;
-  const [drifting, setDrifting] = useState(false);
-
-  useEffect(() => {
-    const t1 = window.setTimeout(() => setDrifting(true), 3000);
-    return () => window.clearTimeout(t1);
-  }, []);
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: centerX,
-        top: centerY,
-        width: FLY_W,
-        height: FLY_H,
-        pointerEvents: 'none',
-        animation: drifting
-          ? 'driftToCorner 1500ms cubic-bezier(0.4, 0, 0.2, 1) forwards'
-          : 'happyBounce 1500ms ease-in-out',
-        ['--dx' as string]: `${dx}px`,
-        ['--dy' as string]: `${dy}px`,
-      }}
-    >
-      <Capybara width={FLY_W} variant="happy" />
-      {!drifting ? <Sparkles /> : null}
-    </div>
-  );
-}
-
-function Sparkles() {
-  const points = [
-    { x: -14, y: -10, delay: 0 },
-    { x: FLY_W - 6, y: -16, delay: 120 },
-    { x: FLY_W / 2 - 4, y: -28, delay: 240 },
-    { x: -22, y: FLY_H - 8, delay: 360 },
-    { x: FLY_W + 4, y: FLY_H / 2, delay: 480 },
-    { x: FLY_W / 2 + 18, y: FLY_H + 4, delay: 600 },
-  ];
-  return (
-    <>
-      {points.map((p, i) => (
-        <div
-          key={i}
-          style={{
-            position: 'absolute',
-            left: p.x,
-            top: p.y,
-            width: 10,
-            height: 10,
-            animation: `sparklePop 900ms ease-out ${p.delay}ms forwards`,
-            opacity: 0,
-          }}
-        >
-          <svg viewBox="0 0 10 10">
-            <path
-              d="M5 0 L6 4 L10 5 L6 6 L5 10 L4 6 L0 5 L4 4 Z"
-              fill="#FFE9A3"
-            />
-          </svg>
-        </div>
-      ))}
-    </>
-  );
-}
