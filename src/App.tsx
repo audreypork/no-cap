@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Capybara, CAPY_ASPECT, CAPY_CHEER_ASPECT, CAPY_WALK_ASPECT } from './Capybara';
 import bedImg from './assets/bed.png';
+import hatImg from './assets/party-hat.png';
 import { getFlybyRoast } from './roasts';
 import type { CapyState, DayRecord } from './types';
 import {
@@ -214,6 +215,7 @@ export function App() {
 
       {!followActive && !happy ? (
         <CornerCapy
+          hat={allDone}
           onClick={() => {
             setViewDateKey(today);
             setPopoverOpen((o) => !o);
@@ -287,7 +289,7 @@ function CornerBed({ onClick }: { onClick: () => void }) {
   );
 }
 
-function CornerCapy({ onClick }: { onClick: () => void }) {
+function CornerCapy({ hat, onClick }: { hat: boolean; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
     <ClickableRegion
@@ -317,6 +319,26 @@ function CornerCapy({ onClick }: { onClick: () => void }) {
         }}
       >
         <Capybara width={CORNER_W} variant="sleeping" />
+        {hat ? (
+          // Party hat earned by finishing all three tasks. The source art
+          // leans right; mirrored so it tips left over his crown.
+          <img
+            src={hatImg}
+            width={36}
+            height={36 * (367 / 256)}
+            alt=""
+            draggable={false}
+            style={{
+              position: 'absolute',
+              left: 4,
+              top: -32,
+              transform: 'scaleX(-1)',
+              userSelect: 'none',
+              pointerEvents: 'none',
+              filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.15))',
+            }}
+          />
+        ) : null}
       </div>
     </ClickableRegion>
   );
