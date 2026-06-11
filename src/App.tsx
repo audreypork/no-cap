@@ -77,6 +77,14 @@ function emptyRecord(date: string, startTime: string): DayRecord {
   return { date, tasks: [], startTime, currentTaskIndex: 0 };
 }
 
+// Last known cursor position, tracked app-wide so FollowingCapy can spawn
+// at the cursor instead of flying in from off-screen. mousemove still
+// reaches the renderer during click-through thanks to { forward: true }.
+const lastCursor = {
+  x: window.innerWidth / 2,
+  y: window.innerHeight / 2,
+};
+
 export function App() {
   const [state, setState] = useState<CapyState | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -93,6 +101,15 @@ export function App() {
     return () => {
       off();
     };
+  }, []);
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      lastCursor.x = e.clientX;
+      lastCursor.y = e.clientY;
+    };
+    document.addEventListener('mousemove', onMove);
+    return () => document.removeEventListener('mousemove', onMove);
   }, []);
 
   useEffect(() => {
@@ -1123,15 +1140,14 @@ function FollowingCapy({
   const [stage, setStage] = useState<'following' | 'frozen' | 'departing'>(
     'following',
   );
+  // Spawn at the spot it would hover for the current cursor position,
+  // so it appears right where the user is rather than flying in.
   const [pos, setPos] = useState<{ x: number; y: number }>(() => ({
-    x: -FLY_W - 40,
-    y: window.innerHeight / 2 - flyH / 2,
+    x: clamp(lastCursor.x + CURSOR_OFFSET_X, 8, window.innerWidth - FLY_W - 8),
+    y: clamp(lastCursor.y - flyH - CURSOR_GAP_Y, 80, window.innerHeight - flyH - 16),
   }));
   const [flipped, setFlipped] = useState(false);
-  const cursorRef = useRef<{ x: number; y: number }>({
-    x: window.innerWidth / 2,
-    y: window.innerHeight / 2,
-  });
+  const cursorRef = useRef<{ x: number; y: number }>({ ...lastCursor });
   const posRef = useRef(pos);
   const rafRef = useRef<number | null>(null);
   const stageRef = useRef(stage);
