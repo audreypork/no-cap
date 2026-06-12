@@ -1,7 +1,7 @@
 {
   "name": "capy",
   "productName": "Capy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A sleeping capybara that holds your daily priorities and flies across your screen until you finish them.",
   "main": ".vite/build/main.js",
   "private": true,

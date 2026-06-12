@@ -9,7 +9,7 @@ declare global {
       onFlybyStart: (cb: (payload: { count: number }) => void) => () => void;
       onWindowBlurred: (cb: () => void) => () => void;
       flybyFinished: () => void;
-      addTask: (title: string) => Promise<void>;
+      addTask: (title: string, slot?: number) => Promise<void>;
       updateTaskTitle: (id: string, title: string) => Promise<void>;
       toggleTask: (id: string) => Promise<void>;
       deleteTask: (id: string) => Promise<void>;

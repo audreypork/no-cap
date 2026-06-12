@@ -20,7 +20,8 @@ contextBridge.exposeInMainWorld('capy', {
     return () => ipcRenderer.removeListener('window-blurred', handler);
   },
   flybyFinished: () => ipcRenderer.send('flyby-finished'),
-  addTask: (title: string) => ipcRenderer.invoke('add-task', title),
+  addTask: (title: string, slot?: number) =>
+    ipcRenderer.invoke('add-task', title, slot),
   updateTaskTitle: (id: string, title: string) =>
     ipcRenderer.invoke('update-task-title', id, title),
   toggleTask: (id: string) => ipcRenderer.invoke('toggle-task', id),

@@ -904,15 +904,35 @@ function TaskList({
   record: DayRecord;
   readonly: boolean;
 }) {
+  // Editing is lifted here so Tab can hop between rows.
+  const [editingSlot, setEditingSlot] = useState<number | null>(null);
+
+  // Tasks render by their fixed slot — clearing slot 0 leaves 1 and 2 put.
+  // Fallback to array order for any record that predates slots.
+  const hasSlots = record.tasks.some((t) => t.slot !== undefined);
+  const taskAt = (i: number) =>
+    hasSlots ? record.tasks.find((t) => t.slot === i) : record.tasks[i];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       {[0, 1, 2].map((i) => {
-        const task = record.tasks[i];
+        const task = taskAt(i);
         return (
           <TaskRow
-            key={task ? task.id : `slot-${i}`}
+            key={`slot-${i}`}
+            slot={i}
             task={task}
             readonly={readonly}
+            editing={editingSlot === i}
+            onStartEdit={() => setEditingSlot(i)}
+            onEndEdit={(advance) => {
+              if (advance === 0) {
+                setEditingSlot(null);
+                return;
+              }
+              const next = i + advance;
+              setEditingSlot(next >= 0 && next <= 2 ? next : null);
+            }}
           />
         );
       })}
@@ -921,22 +941,35 @@ function TaskList({
 }
 
 function TaskRow({
+  slot,
   task,
   readonly,
+  editing,
+  onStartEdit,
+  onEndEdit,
 }: {
+  slot: number;
   task: { id: string; title: string; done: boolean } | undefined;
   readonly: boolean;
+  editing: boolean;
+  onStartEdit: () => void;
+  /** advance: 0 = stop editing, +1/-1 = move to adjacent row (Tab / Shift+Tab) */
+  onEndEdit: (advance: number) => void;
 }) {
-  const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task?.title ?? '');
+  // Guards the blur-commit after Tab/Enter/Escape already ended the session.
+  const endedRef = useRef(false);
 
   useEffect(() => {
-    if (!editing) setDraft(task?.title ?? '');
-  }, [task?.title, editing]);
+    if (editing) {
+      setDraft(task?.title ?? '');
+      endedRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing]);
 
-  const commit = async () => {
-    setEditing(false);
-    const trimmed = draft.trim();
+  const commit = async (text: string) => {
+    const trimmed = text.trim();
     if (task) {
       if (trimmed === '') {
         await window.capy.deleteTask(task.id);
@@ -944,8 +977,15 @@ function TaskRow({
         await window.capy.updateTaskTitle(task.id, trimmed);
       }
     } else if (trimmed !== '') {
-      await window.capy.addTask(trimmed);
+      await window.capy.addTask(trimmed, slot);
     }
+  };
+
+  const finish = (advance: number, save: boolean) => {
+    if (endedRef.current) return;
+    endedRef.current = true;
+    if (save) void commit(draft);
+    onEndEdit(advance);
   };
 
   const isEmpty = !task;
@@ -999,12 +1039,13 @@ function TaskRow({
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
+          onBlur={() => finish(0, true)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-            if (e.key === 'Escape') {
-              setDraft(task?.title ?? '');
-              setEditing(false);
+            if (e.key === 'Enter') finish(0, true);
+            if (e.key === 'Escape') finish(0, false);
+            if (e.key === 'Tab') {
+              e.preventDefault();
+              finish(e.shiftKey ? -1 : 1, true);
             }
           }}
           placeholder="Add a priority..."
@@ -1020,7 +1061,7 @@ function TaskRow({
       ) : (
         <div
           onClick={() => {
-            if (!readonly) setEditing(true);
+            if (!readonly) onStartEdit();
           }}
           style={{
             ...textStyle,

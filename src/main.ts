@@ -215,10 +215,20 @@ function registerIpc() {
     }
   });
 
-  ipcMain.handle('add-task', (_e, title: string) => {
+  ipcMain.handle('add-task', (_e, title: string, slot?: number) => {
     const today = getTodayRecord();
     if (today.tasks.length >= 3) return;
-    today.tasks.push({ id: randomUUID(), title: title || '', done: false });
+    const wantedSlot =
+      typeof slot === 'number' && slot >= 0 && slot <= 2
+        ? slot
+        : [0, 1, 2].find((s) => !today.tasks.some((t) => t.slot === s)) ?? 0;
+    if (today.tasks.some((t) => t.slot === wantedSlot)) return;
+    today.tasks.push({
+      id: randomUUID(),
+      title: title || '',
+      done: false,
+      slot: wantedSlot,
+    });
     setTodayRecord(today);
     broadcastState();
   });
@@ -319,9 +329,26 @@ function clearExpiredPause() {
   }
 }
 
+// One-time migration: tasks created before slots existed get their
+// array index as their fixed row position.
+function migrateTaskSlots() {
+  const days = store.get('days');
+  let changed = false;
+  for (const rec of Object.values(days)) {
+    rec.tasks.forEach((t, idx) => {
+      if (t.slot === undefined) {
+        t.slot = idx;
+        changed = true;
+      }
+    });
+  }
+  if (changed) store.set('days', days);
+}
+
 app.on('ready', async () => {
   if (app.dock) app.dock.hide();
   ensureTodayRecord();
+  migrateTaskSlots();
   clearExpiredPause();
   registerIpc();
   createWindow();

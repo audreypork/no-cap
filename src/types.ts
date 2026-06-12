@@ -3,6 +3,8 @@ export type Task = {
   title: string;
   done: boolean;
   doneAt?: number;
+  /** Fixed row position 0-2 — clearing a task must not shift the others. */
+  slot?: number;
 };
 
 export type DayRecord = {
