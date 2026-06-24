@@ -36,5 +36,6 @@ contextBridge.exposeInMainWorld('capy', {
   setMood: (mood: 'naughty' | 'nice') => ipcRenderer.invoke('set-mood', mood),
   setStopTime: (time: string) => ipcRenderer.invoke('set-stop-time', time),
   openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
+  applyUpdate: () => ipcRenderer.invoke('apply-update'),
   quitApp: () => ipcRenderer.invoke('quit-app'),
 });

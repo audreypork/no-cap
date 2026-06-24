@@ -30,6 +30,8 @@ export type CapyState = {
   store: CapyStoreShape;
   today: string;
   now: number;
+  /** True once a newer version has been downloaded and is waiting to apply. */
+  updateReady?: boolean;
 };
 
 export type FlybyTask = {
