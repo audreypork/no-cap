@@ -1,9 +1,11 @@
 # Capy 🦫
 
-A capybara that lives in the corner of your Mac, holding your three
+A capybara that lives in the corner of your screen, holding your three
 priorities for the day. After your check-in time, if anything is still
 unchecked, he wakes up and follows your cursor around the screen —
 roasting you (or cheering for you, your choice) until you finish.
+
+Runs on **macOS** (Apple Silicon) and **Windows** (10/11).
 
 The only ways to make him go back to sleep:
 
@@ -13,14 +15,20 @@ The only ways to make him go back to sleep:
 
 ## Install
 
-1. Download the latest `Capy-darwin-arm64-x.x.x.zip` from
-   [Releases](https://github.com/audreypork/no-cap/releases)
-2. Unzip it and drag `Capy.app` into your **Applications** folder
-3. Open it — find the sleeping capybara in the bottom-right corner of
-   your screen
+Grab the latest build from [getcapy.lol](https://getcapy.lol) or the
+[Releases page](https://github.com/audreypork/no-cap/releases).
 
-The app is signed and notarized, so it opens without warnings.
-Requires an Apple Silicon Mac (M1 or later) running macOS.
+**macOS** (Apple Silicon, M1+):
+1. Download `Capy.zip`, unzip, drag `Capy.app` into **Applications**
+2. Open it — signed & notarized, so it launches without warnings
+
+**Windows** (10/11):
+1. Download `Capy-Setup.exe` (installer) — or `Capy-windows-portable.zip`,
+   unzip, and run `Capy.exe`
+2. The build is currently unsigned, so SmartScreen may say "Windows
+   protected your PC" — click **More info → Run anyway**
+
+Either way, the sleeping capybara appears in the bottom-right corner.
 
 ## Use
 

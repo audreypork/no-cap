@@ -90,6 +90,12 @@
     font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.6px;
     color: var(--label);
   }
+  .dl-icon { display: inline-flex; }
+  .alt-os {
+    color: var(--label); text-decoration: underline;
+    text-decoration-thickness: 1px; text-underline-offset: 2px;
+  }
+  .alt-os:hover { color: var(--ink); }
 
   /* ===== floating to-do panel, centered ===== */
   .float-panel {
@@ -185,15 +191,17 @@
 <main class="hero">
   <h1>3 tasks.<br>1 capybara.</h1>
   <p class="sub">Capy naps in the corner quietly if you get all your work done. If you don't finish your work, well... goodluck!</p>
-  <a class="dl-btn" href="https://github.com/audreypork/no-cap/releases/latest/download/Capy.zip">
-    <svg width="18" height="21" viewBox="0 0 18 21" fill="currentColor" aria-hidden="true">
-      <path d="M14.55 11.06c-.02-2.41 1.97-3.57 2.06-3.63-1.12-1.64-2.87-1.87-3.49-1.89-1.49-.15-2.9.87-3.65.87-.75 0-1.92-.85-3.15-.83-1.62.02-3.12.94-3.95 2.39-1.69 2.92-.43 7.25 1.21 9.62.8 1.16 1.76 2.46 3.01 2.41 1.21-.05 1.66-.78 3.12-.78 1.46 0 1.87.78 3.15.76 1.3-.02 2.12-1.18 2.91-2.35.92-1.34 1.3-2.64 1.32-2.71-.03-.01-2.52-.97-2.54-3.86z"/>
-      <path d="M12.15 3.99c.67-.81 1.12-1.93.99-3.05-.96.04-2.13.64-2.82 1.45-.62.72-1.16 1.86-1.02 2.96 1.08.08 2.18-.55 2.85-1.36z"/>
-    </svg>
-    Download for Mac
+  <a class="dl-btn" id="dl-btn" href="https://github.com/audreypork/no-cap/releases/latest/download/Capy.zip">
+    <span class="dl-icon" id="dl-icon">
+      <svg width="18" height="21" viewBox="0 0 18 21" fill="currentColor" aria-hidden="true">
+        <path d="M14.55 11.06c-.02-2.41 1.97-3.57 2.06-3.63-1.12-1.64-2.87-1.87-3.49-1.89-1.49-.15-2.9.87-3.65.87-.75 0-1.92-.85-3.15-.83-1.62.02-3.12.94-3.95 2.39-1.69 2.92-.43 7.25 1.21 9.62.8 1.16 1.76 2.46 3.01 2.41 1.21-.05 1.66-.78 3.12-.78 1.46 0 1.87.78 3.15.76 1.3-.02 2.12-1.18 2.91-2.35.92-1.34 1.3-2.64 1.32-2.71-.03-.01-2.52-.97-2.54-3.86z"/>
+        <path d="M12.15 3.99c.67-.81 1.12-1.93.99-3.05-.96.04-2.13.64-2.82 1.45-.62.72-1.16 1.86-1.02 2.96 1.08.08 2.18-.55 2.85-1.36z"/>
+      </svg>
+    </span>
+    <span id="dl-label">Download for Mac</span>
     <span class="beta-pill">Beta</span>
   </a>
-  <p class="dl-count"><span id="dl-num">3</span> downloads</p>
+  <p class="dl-count"><span id="dl-num">3</span> downloads · <a class="alt-os" id="alt-os" href="https://github.com/audreypork/no-cap/releases/latest/download/Capy-Setup.exe">also on Windows</a></p>
 </main>
 
 <!-- to-do panel, centered, matching the latest modal -->
@@ -363,6 +371,28 @@
 </div>
 
 <script>
+  // OS-aware download button: default markup targets Mac; if the
+  // visitor is on Windows, swap the icon, label, primary link, and the
+  // secondary "also on ___" link.
+  (() => {
+    const ua = (navigator.userAgentData && navigator.userAgentData.platform) ||
+      navigator.platform || navigator.userAgent || '';
+    const isWindows = /win/i.test(ua);
+    if (!isWindows) return;
+    const REL = 'https://github.com/audreypork/no-cap/releases/latest/download/';
+    document.getElementById('dl-btn').href = REL + 'Capy-Setup.exe';
+    document.getElementById('dl-label').textContent = 'Download for Windows';
+    document.getElementById('dl-icon').innerHTML =
+      '<svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true">' +
+      '<path d="M0 2.55 7.35 1.54 7.35 8.62 0 8.62Z"/>' +
+      '<path d="M8.24 1.41 18 0 18 8.62 8.24 8.62Z"/>' +
+      '<path d="M0 9.4 7.35 9.4 7.35 16.46 0 15.45Z"/>' +
+      '<path d="M8.24 9.4 18 9.4 18 18 8.24 16.59Z"/></svg>';
+    const alt = document.getElementById('alt-os');
+    alt.href = REL + 'Capy.zip';
+    alt.textContent = 'also on Mac';
+  })();
+
   // Live download count from GitHub Releases, calibrated so the
   // counter started at 3. Falls back to the static "3" on any error.
   (async () => {
