@@ -89,7 +89,12 @@ function broadcastState() {
 
 function createWindow() {
   const primary = screen.getPrimaryDisplay();
-  const { x, y, width, height } = primary.bounds;
+  // macOS: cover the whole display so capy can fly past the Dock.
+  // Windows: cover the work area instead, so the corner capy sits above
+  // the taskbar / system tray rather than behind it.
+  const area =
+    process.platform === 'win32' ? primary.workArea : primary.bounds;
+  const { x, y, width, height } = area;
 
   mainWindow = new BrowserWindow({
     x,
@@ -115,7 +120,10 @@ function createWindow() {
   });
 
   mainWindow.setAlwaysOnTop(true, 'screen-saver');
-  mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  // "Show on all desktops" is a macOS/Linux Spaces concept; skip on Windows.
+  if (process.platform !== 'win32') {
+    mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  }
   mainWindow.setIgnoreMouseEvents(true, { forward: true });
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {

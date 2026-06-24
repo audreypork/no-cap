@@ -1,0 +1,63 @@
+name: Windows build
+
+# Builds the Windows installer + portable zip on a real Windows runner
+# (the Squirrel installer can't be produced from macOS) and attaches them
+# to the GitHub Release for the pushed tag. Also runnable on demand.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag to attach the build to (e.g. v1.0.1)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Windows installer + zip
+        run: npx electron-forge make --platform=win32 --arch=x64
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir dist
+          # Squirrel installer -> stable name for a clean download link
+          find out/make/squirrel.windows -name "*.exe" -exec cp {} "dist/Capy-Setup.exe" \;
+          # Portable zip
+          find out/make/zip/win32 -name "*.zip" -exec cp {} "dist/Capy-windows-portable.zip" \;
+          ls -la dist
+
+      - name: Upload to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          # Create the release if it doesn't exist yet, then attach files.
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" --title "Capy $TAG" --notes "Windows build attached by CI."
+          gh release upload "$TAG" \
+            "dist/Capy-Setup.exe" \
+            "dist/Capy-windows-portable.zip" \
+            --clobber
+
+      - name: Save artifacts on the run too
+        uses: actions/upload-artifact@v4
+        with:
+          name: capy-windows
+          path: dist/*
