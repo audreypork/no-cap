@@ -21,7 +21,6 @@ declare global {
       setMood: (mood: 'naughty' | 'nice') => Promise<void>;
       setStopTime: (time: string) => Promise<void>;
       openExternal: (url: string) => Promise<void>;
-      applyUpdate: () => Promise<void>;
       quitApp: () => Promise<void>;
     };
   }

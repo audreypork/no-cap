@@ -466,44 +466,10 @@ function Popover({
               <CheckInBand startTime={viewRecord.startTime} />
             ) : null}
             <TaskList record={viewRecord} readonly={isViewingPast} />
-            {state.updateReady ? <UpdateCue /> : null}
           </>
         )}
       </div>
     </ClickableRegion>
-  );
-}
-
-// Shown in the panel once a new version has downloaded. Clicking it restarts
-// Capy into the new build; otherwise it applies whenever Capy is reopened.
-function UpdateCue() {
-  const [hover, setHover] = useState(false);
-  return (
-    <div
-      onClick={() => window.capy.applyUpdate()}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        marginTop: 2,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        fontFamily: FONT_MONO,
-        fontSize: 11.5,
-        letterSpacing: 0.2,
-        color: hover ? PANEL.ink : PANEL.muted,
-        cursor: 'pointer',
-        transition: 'color 120ms',
-      }}
-    >
-      <span aria-hidden="true">✨</span>
-      <span>
-        Update ready —{' '}
-        <span style={{ textDecoration: 'underline', textUnderlineOffset: 2 }}>
-          reopen Capy to apply
-        </span>
-      </span>
-    </div>
   );
 }
 

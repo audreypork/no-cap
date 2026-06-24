@@ -40,10 +40,6 @@ jobs:
           find out/make/squirrel.windows -name "*.exe" -exec cp {} "dist/Capy-Setup.exe" \;
           # Portable zip
           find out/make/zip/win32 -name "*.zip" -exec cp {} "dist/Capy-windows-portable.zip" \;
-          # Squirrel auto-update feed files — must keep their exact names
-          # (RELEASES references the .nupkg by name) so the updater resolves.
-          find out/make/squirrel.windows -name "RELEASES" -exec cp {} "dist/RELEASES" \;
-          find out/make/squirrel.windows -name "*.nupkg" -exec cp {} dist/ \;
           ls -la dist
 
       - name: Upload to release
@@ -55,7 +51,10 @@ jobs:
           # Create the release if it doesn't exist yet, then attach files.
           gh release view "$TAG" >/dev/null 2>&1 || \
             gh release create "$TAG" --title "Capy $TAG" --notes "Windows build attached by CI."
-          gh release upload "$TAG" dist/* --clobber
+          gh release upload "$TAG" \
+            "dist/Capy-Setup.exe" \
+            "dist/Capy-windows-portable.zip" \
+            --clobber
 
       - name: Save artifacts on the run too
         uses: actions/upload-artifact@v4

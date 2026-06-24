@@ -1,9 +1,8 @@
-import { app, BrowserWindow, ipcMain, screen, shell, autoUpdater } from 'electron';
+import { app, BrowserWindow, ipcMain, screen, shell } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import Store from 'electron-store';
 import AutoLaunch from 'auto-launch';
-import { updateElectronApp, UpdateSourceType } from 'update-electron-app';
 import { randomUUID } from 'node:crypto';
 import type { CapyStoreShape, DayRecord } from './types';
 import {
@@ -66,8 +65,6 @@ let lastFlybyAt = 0;
 let flybyInProgress = false;
 let flybyCheckTimer: NodeJS.Timeout | null = null;
 let rolloverTimer: NodeJS.Timeout | null = null;
-// Set once a new version has been downloaded and is waiting to be applied.
-let updateReady = false;
 
 function snapshotStore() {
   return {
@@ -80,18 +77,14 @@ function snapshotStore() {
   };
 }
 
-function buildState() {
-  return {
+function broadcastState() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const state = {
     store: snapshotStore(),
     today: localDateKey(),
     now: Date.now(),
-    updateReady,
   };
-}
-
-function broadcastState() {
-  if (!mainWindow || mainWindow.isDestroyed()) return;
-  mainWindow.webContents.send('state-changed', buildState());
+  mainWindow.webContents.send('state-changed', state);
 }
 
 function createWindow() {
@@ -208,11 +201,11 @@ function registerIpc() {
     }
   });
 
-  ipcMain.handle('get-state', () => buildState());
-
-  ipcMain.handle('apply-update', () => {
-    if (updateReady) autoUpdater.quitAndInstall();
-  });
+  ipcMain.handle('get-state', () => ({
+    store: snapshotStore(),
+    today: localDateKey(),
+    now: Date.now(),
+  }));
 
   ipcMain.handle('set-mood', (_e, mood: 'naughty' | 'nice') => {
     store.set('mood', mood);
@@ -360,31 +353,6 @@ function migrateTaskSlots() {
   if (changed) store.set('days', days);
 }
 
-// Silent background auto-update via the Electron public update service
-// (reads the GitHub Releases of audreypork/no-cap). No built-in dialog —
-// when a build is downloaded we flag updateReady and the renderer shows a
-// subtle "reopen to apply" cue. Only runs in packaged builds.
-function setupAutoUpdate() {
-  if (!app.isPackaged) return;
-  try {
-    updateElectronApp({
-      updateSource: {
-        type: UpdateSourceType.ElectronPublicUpdateService,
-        repo: 'audreypork/no-cap',
-      },
-      updateInterval: '1 hour',
-      notifyUser: false,
-    });
-    autoUpdater.on('update-downloaded', () => {
-      updateReady = true;
-      broadcastState();
-    });
-    autoUpdater.on('error', (err) => console.error('auto-update error', err));
-  } catch (err) {
-    console.error('auto-update setup failed', err);
-  }
-}
-
 app.on('ready', async () => {
   if (app.dock) app.dock.hide();
   ensureTodayRecord();
@@ -394,7 +362,6 @@ app.on('ready', async () => {
   createWindow();
   scheduleMidnightRollover();
   startFlybyScheduler();
-  setupAutoUpdate();
   await syncAutoLaunch();
 });
 
